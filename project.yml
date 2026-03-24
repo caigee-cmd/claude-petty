@@ -1,7 +1,7 @@
 name: ClaudeDash
 
 options:
-  bundleIdPrefix: com.yourname
+  bundleIdPrefix: com.claudedash
   deploymentTarget:
     macOS: "14.0"
   xcodeVersion: "16.0"
@@ -24,7 +24,7 @@ targets:
       properties:
         CFBundleName: ClaudeDash
         CFBundleDisplayName: ClaudeDash
-        CFBundleIdentifier: com.yourname.claudedash
+        CFBundleIdentifier: com.claudedash.app
         CFBundleShortVersionString: "1.0.0"
         CFBundleVersion: "1"
         LSUIElement: true
@@ -35,7 +35,7 @@ targets:
         NSDownloadsFolderUsageDescription: "ClaudeDash 需要访问下载目录以监控 Claude Code 的 transcript 文件。"
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.yourname.claudedash
+        PRODUCT_BUNDLE_IDENTIFIER: com.claudedash.app
         INFOPLIST_FILE: ClaudeDash/Resources/Info.plist
         CODE_SIGN_ENTITLEMENTS: ""
     dependencies:
@@ -52,7 +52,7 @@ targets:
       - path: ClaudeDashHelper
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.yourname.claudedash.helper
+        PRODUCT_BUNDLE_IDENTIFIER: com.claudedash.helper
 
   ClaudeDashTests:
     type: bundle.unit-test
@@ -64,4 +64,4 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: true
-        PRODUCT_BUNDLE_IDENTIFIER: com.yourname.claudedash.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.claudedash.tests

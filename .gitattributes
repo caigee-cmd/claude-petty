@@ -1,0 +1,28 @@
+# 自动处理行末转换
+* text=auto
+
+# Swift 源文件
+*.swift text eol=lf
+*.swift diff=swift
+
+# 配置文件
+*.plist text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.jsonl text eol=lf
+
+# 文档
+*.md text eol=lf
+*.markdown text eol=lf
+*.txt text eol=lf
+LICENSE text eol=lf
+
+# 二进制文件
+*.app binary
+*.xcarchive binary
+*.dSYM binary
+
+# 脚本
+*.sh text eol=lf
+*.bash text eol=lf
