@@ -80,7 +80,7 @@ shasum -a 256 dist/ClaudeGlance.zip
 当前构建面向开发者用户。Release 文案应直接提醒：
 
 - 下载后可能需要 `Open Anyway`
-- 如果打不开，请看 README 中的 `First Launch on macOS`
+- 如果打不开，请看 README 中的安装说明和已知限制
 - 如果没有数据，请检查 `~/.claude/projects/`
 
 ## 当前不做的事

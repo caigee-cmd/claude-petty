@@ -29,6 +29,11 @@ Claude Glance passively reads local transcript data under `~/.claude/projects/` 
 3. Move it to `/Applications`
 4. If macOS blocks launch, use `Open Anyway` in `Privacy & Security`
 
+Notes:
+
+- The current public build is unsigned and not notarized.
+- On first launch, macOS may block the app until you manually allow it in `Privacy & Security`.
+
 ### From Source
 
 Requirements:
