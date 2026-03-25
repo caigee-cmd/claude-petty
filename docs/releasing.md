@@ -1,6 +1,6 @@
 # Releasing Claude Glance
 
-本文件描述当前面向开发者用户的最小发布流程。当前流程不依赖 Apple Developer Program、Developer ID 或 notarization，目标是稳定地产出一个可下载、可校验、可排障的 `ClaudeGlance.zip`。
+本文件描述当前面向开发者用户的最小发布流程。当前公开版本采用被动本地读取模式，不依赖 Apple Developer Program、Developer ID 或 notarization，目标是稳定地产出一个可下载、可校验、可排障的 `ClaudeGlance.zip`。
 
 ## 发布前检查
 
@@ -71,6 +71,7 @@ shasum -a 256 dist/ClaudeGlance.zip
   - 未 notarize
   - 首次打开可能被 Gatekeeper 拦截
   - 暂无自动更新
+  - 被动本地读取模式，不包含 Hook 安装流程
 - 安装说明入口：指向 `README.md`
 - `ClaudeGlance.zip` 的 SHA-256 校验值
 

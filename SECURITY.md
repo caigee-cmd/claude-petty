@@ -23,14 +23,12 @@
 
 ## Security Notes
 
-Claude Glance 当前的默认公开模式是本地被动读取：
+Claude Glance 当前公开模式是本地被动读取：
 
 - 读取 `~/.claude/projects/` 下的 transcript / session 数据
 - 写入 `~/Library/Application Support/ClaudeDash/`（为兼容现有版本，目录名暂未重命名）
 - 默认不上传数据到云端
-- 默认不自动修改 `~/.claude/settings.json`
-
-如果你在本地自行启用了实验性的 Hook 或增强流程，请先自行确认这些改动是否符合你的安全预期。相关路径在写入前应创建时间戳备份，但实验性能力不应视为稳定公开接口。
+- 不会自动修改 `~/.claude/settings.json`
 
 ## Disclosure Expectations
 
