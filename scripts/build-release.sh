@@ -23,8 +23,7 @@ xcodebuild build \
   -scheme ClaudeDash \
   -configuration Release \
   -derivedDataPath "${DERIVED_DATA_DIR}-arm64" \
-  -arch arm64 \
-  -destination "generic/platform=macOS"
+  -destination 'platform=macOS,arch=arm64'
 
 echo "=== Building x86_64 ==="
 xcodebuild build \
@@ -32,8 +31,7 @@ xcodebuild build \
   -scheme ClaudeDash \
   -configuration Release \
   -derivedDataPath "${DERIVED_DATA_DIR}-x86_64" \
-  -arch x86_64 \
-  -destination "generic/platform=macOS"
+  -destination 'platform=macOS,arch=x86_64'
 
 ARM64_APP="${DERIVED_DATA_DIR}-arm64/Build/Products/Release/${APP_NAME}"
 X86_APP="${DERIVED_DATA_DIR}-x86_64/Build/Products/Release/${APP_NAME}"
