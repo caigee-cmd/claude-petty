@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install GraphicsMagick
+        run: brew install graphicsmagick
+
+      - name: Install create-dmg
+        run: npm install -g create-dmg
+
+      - name: Build Release
+        run: |
+          chmod +x scripts/build-release.sh
+          ./scripts/build-release.sh
+
+      - name: Create DMG
+        run: |
+          chmod +x scripts/build-dmg.sh
+          ./scripts/build-dmg.sh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: |
+            Download and install Claude Glance on your Mac.
+
+            **Installation:**
+            1. Open the DMG file
+            2. Drag Claude Glance to Applications
+            3. Launch from Applications (first launch requires right-click → Open)
+          files: |
+            dist/ClaudeGlance.zip
+            dist/*.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
