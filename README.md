@@ -22,9 +22,11 @@ Claude Glance passively reads local transcript data under `~/.claude/projects/` 
 
 ## More Views
 
-Supplementary views for the menu bar workflow and local stats.
+Quick glance at today's stats, active sessions, and recent completions — all from the menu bar.
 
-![Floating panel detail](docs/screenshots/flottingpannel.png)
+![Menu bar popover](docs/screenshots/menupannel.png)
+
+Floating panel for richer context and recent activity.
 
 Floating panel detail for recent activity and active session context.
 
