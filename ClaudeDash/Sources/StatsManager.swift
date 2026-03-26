@@ -210,8 +210,8 @@ private enum StatsComputation {
         lastWeekSessions.sort { $0.startTime < $1.startTime }
 
         let projectStats = Array(projectMap.values).sorted { $0.sessionCount > $1.sessionCount }
-        let thisWeekSummary = weekSummary(from: thisWeekSessions, calendar: calendar)
-        let lastWeekSummary = weekSummary(from: lastWeekSessions, calendar: calendar)
+        let thisWeekSummary = summary(from: thisWeekSessions, calendar: calendar)
+        let lastWeekSummary = summary(from: lastWeekSessions, calendar: calendar)
 
         return StatsDerivedCache(
             heatmapDailyCounts: heatmapDailyCounts,
@@ -250,7 +250,7 @@ private enum StatsComputation {
         )
     }
 
-    private static func weekSummary(
+    static func summary(
         from sessions: [ScannedSession],
         calendar: Calendar
     ) -> WeekSummary {
@@ -365,6 +365,104 @@ private enum StatsComputation {
         return insights
     }
 
+    static func rangeInsights(
+        sessions: [ScannedSession],
+        currentSummary: WeekSummary,
+        previousSummary: WeekSummary,
+        calendar: Calendar
+    ) -> [StatsManager.Insight] {
+        var insights: [StatsManager.Insight] = []
+
+        if let longest = sessions.max(by: { $0.durationSeconds < $1.durationSeconds }) {
+            insights.append(StatsManager.Insight(
+                icon: "timer",
+                title: "Longest Session",
+                detail: "\(longest.durationSeconds.durationFormatted) - \(longest.projectName)",
+                colorName: "blue"
+            ))
+        }
+
+        if let expensive = sessions.max(by: { $0.estimatedCost < $1.estimatedCost }) {
+            insights.append(StatsManager.Insight(
+                icon: "dollarsign.circle",
+                title: "Most Expensive",
+                detail: "\(expensive.estimatedCost.usdFormatted) - \(expensive.projectName)",
+                colorName: "orange"
+            ))
+        }
+
+        var projectCounts: [String: Int] = [:]
+        for session in sessions {
+            projectCounts[session.projectName, default: 0] += 1
+        }
+        if let top = projectCounts.max(by: { $0.value < $1.value }) {
+            insights.append(StatsManager.Insight(
+                icon: "folder.fill",
+                title: "Top Project",
+                detail: "\(top.key) - \(top.value) sessions",
+                colorName: "purple"
+            ))
+        }
+
+        var hourCounts: [Int: Int] = [:]
+        for session in sessions {
+            hourCounts[calendar.component(.hour, from: session.startTime), default: 0] += 1
+        }
+        if let peakHour = hourCounts.max(by: { $0.value < $1.value }) {
+            insights.append(StatsManager.Insight(
+                icon: "clock.fill",
+                title: "Peak Hour",
+                detail: "\(peakHour.key):00 - \(peakHour.value) sessions",
+                colorName: "cyan"
+            ))
+        }
+
+        if previousSummary.sessions > 0 {
+            let change = weekChangePercent(currentSummary.sessions, previousSummary.sessions)
+            let direction = change >= 0 ? "up" : "down"
+            insights.append(StatsManager.Insight(
+                icon: change >= 0 ? "arrow.up.right" : "arrow.down.right",
+                title: "Change vs Previous",
+                detail: "\(abs(Int(change)))% \(direction) (\(currentSummary.sessions) vs \(previousSummary.sessions) sessions)",
+                colorName: change >= 0 ? "green" : "red"
+            ))
+        }
+
+        if !sessions.isEmpty {
+            let avgDuration = sessions.reduce(0.0) { $0 + $1.durationSeconds } / Double(sessions.count)
+            insights.append(StatsManager.Insight(
+                icon: "gauge.medium",
+                title: "Avg Session Length",
+                detail: avgDuration.durationFormatted,
+                colorName: "indigo"
+            ))
+        }
+
+        let toolTotal = sessions.reduce(0) { $0 + $1.toolUseCount }
+        if toolTotal > 0 {
+            insights.append(StatsManager.Insight(
+                icon: "wrench.and.screwdriver",
+                title: "Tool Invocations",
+                detail: "\(toolTotal) in range",
+                colorName: "teal"
+            ))
+        }
+
+        let cacheRead = sessions.reduce(0) { $0 + $1.cacheReadTokens }
+        let pureInput = sessions.reduce(0) { $0 + $1.inputTokens }
+        if cacheRead > 0, pureInput > 0 {
+            let hitRate = Double(cacheRead) / Double(cacheRead + pureInput) * 100
+            insights.append(StatsManager.Insight(
+                icon: "memorychip",
+                title: "Cache Hit Rate",
+                detail: String(format: "%.0f%% - saved %@", hitRate, (Double(cacheRead) / 1_000_000 * 13.5).usdFormatted),
+                colorName: "mint"
+            ))
+        }
+
+        return insights
+    }
+
     private static func simplifiedModelName(_ model: String) -> String {
         model
             .replacingOccurrences(of: "claude-", with: "")
@@ -385,6 +483,70 @@ private enum StatsComputation {
 
 @MainActor
 final class StatsManager: ObservableObject {
+    struct RangeSnapshot: Sendable {
+        let dailySummaries: [DailySummary]
+        let aggregate: DailySummary
+        let previousAggregate: DailySummary
+        let currentSummary: WeekSummary
+        let previousSummary: WeekSummary
+        let projectStats: [ProjectStat]
+        let maxProjectSessionCount: Int
+        let toolDistributionSorted: [(tool: String, count: Int)]
+        let totalToolUseCount: Int
+        let modelDistribution: [(model: String, count: Int)]
+        let averageMessagesPerSession: Double
+        let averageToolUsesPerSession: Double
+        let durationBuckets: [DurationBucket]
+        let weeklyHourlyHeatmap: [[Int]]
+        let sessions: [ScannedSession]
+        let insights: [Insight]
+        let totalSessionCount: Int
+
+        var inputTokens: Int { aggregate.totalInputTokens }
+        var outputTokens: Int { aggregate.totalOutputTokens }
+        var totalTokens: Int { aggregate.totalTokens }
+        var totalCost: Double { aggregate.totalCost }
+        var totalDurationSeconds: Double { aggregate.totalDurationSeconds }
+        var averageCostPerSession: Double {
+            currentSummary.sessions > 0 ? aggregate.totalCost / Double(currentSummary.sessions) : 0
+        }
+        var averageDurationPerSession: Double {
+            currentSummary.sessions > 0 ? aggregate.totalDurationSeconds / Double(currentSummary.sessions) : 0
+        }
+        var completionTrend: Int {
+            aggregate.completionCount - previousAggregate.completionCount
+        }
+        var costTrend: Double {
+            aggregate.totalCost - previousAggregate.totalCost
+        }
+        var durationTrend: Double {
+            aggregate.totalDurationSeconds - previousAggregate.totalDurationSeconds
+        }
+        var pureInputTokens: Int {
+            max(inputTokens - aggregate.totalCacheReadTokens - aggregate.totalCacheCreationTokens, 0)
+        }
+        var cacheHitRate: Double {
+            let total = aggregate.totalCacheReadTokens + pureInputTokens
+            return total > 0 ? Double(aggregate.totalCacheReadTokens) / Double(total) : 0
+        }
+        var cacheSavings: Double {
+            Double(aggregate.totalCacheReadTokens) / 1_000_000 * 13.5
+        }
+        var tokensPerMinute: Double {
+            guard totalDurationSeconds > 60 else { return 0 }
+            return Double(totalTokens) / (totalDurationSeconds / 60.0)
+        }
+        var tokensPerDollar: Double {
+            guard totalCost > 0.001 else { return 0 }
+            return Double(totalTokens) / totalCost
+        }
+        var peakHour: Int? {
+            let maxCount = aggregate.hourlyDistribution.max() ?? 0
+            guard maxCount > 0 else { return nil }
+            return aggregate.hourlyDistribution.firstIndex(of: maxCount)
+        }
+    }
+
     // MARK: - 单例
 
     static let shared = StatsManager()
@@ -418,6 +580,8 @@ final class StatsManager: ObservableObject {
     }()
 
     private var cachedHeatmapDailyCounts: [String: Int] = [:]
+    private var cachedAllSessions: [ScannedSession] = []
+    private var cachedRangeSnapshots: [Int: RangeSnapshot] = [:]
     private var cachedProjectStats: [ProjectStat] = []
     private var cachedMaxProjectSessionCount: Int = 1
     private var cachedTotalCacheSavings: Double = 0
@@ -469,6 +633,9 @@ final class StatsManager: ObservableObject {
     }
 
     private func apply(_ snapshot: StatsScanSnapshot) {
+        cachedAllSessions = snapshot.sessions
+        cachedRangeSnapshots.removeAll()
+
         let todayKey = dateFormatter.string(from: Date())
         let todaySummary = snapshot.dailyMap[todayKey] ?? DailySummary(dateString: todayKey)
         applyTodaySummary(todaySummary)
@@ -523,6 +690,7 @@ final class StatsManager: ObservableObject {
         todayCompletionCount += 1
         todayCost += record.cost
         todayDurationSeconds += Double(record.durationMs) / 1000.0
+        cachedRangeSnapshots.removeAll()
 
         let hour = Calendar.current.component(.hour, from: record.completedAt)
         if hour >= 0 && hour < 24 {
@@ -541,6 +709,7 @@ final class StatsManager: ObservableObject {
             let data = try Data(contentsOf: sessionsFileURL)
             let sessions = try JSONDecoder().decode([SessionRecord].self, from: data)
             recentSessions = Array(sessions.suffix(5))
+            cachedRangeSnapshots.removeAll()
         } catch {
             print("[StatsManager] 刷新 sessions 文件失败: \(error)")
         }
@@ -778,6 +947,74 @@ final class StatsManager: ObservableObject {
         cachedTotalScannedSessionCount
     }
 
+    func snapshot(forLastDays days: Int) -> RangeSnapshot {
+        let clampedDays = min(max(days, 1), 30)
+        if let cached = cachedRangeSnapshots[clampedDays] {
+            return cached
+        }
+
+        let calendar = Calendar.current
+        let now = Date()
+        let currentStart = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -(clampedDays - 1), to: now) ?? now)
+        let currentEnd = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
+        let previousStart = calendar.date(byAdding: .day, value: -clampedDays, to: currentStart) ?? currentStart
+
+        let currentSessions = cachedAllSessions
+            .filter { $0.startTime >= currentStart && $0.startTime < currentEnd }
+            .sorted { $0.startTime < $1.startTime }
+        let previousSessions = cachedAllSessions
+            .filter { $0.startTime >= previousStart && $0.startTime < currentStart }
+            .sorted { $0.startTime < $1.startTime }
+
+        let currentDailyMap = StatsComputation.buildDailyMap(from: currentSessions, calendar: calendar)
+        let previousDailyMap = StatsComputation.buildDailyMap(from: previousSessions, calendar: calendar)
+        let currentDerived = StatsComputation.buildDerivedCache(from: currentSessions, now: now, calendar: calendar)
+
+        let currentWindow = buildRollingWindow(
+            days: clampedDays,
+            referenceDate: now,
+            dailyMap: currentDailyMap
+        )
+        let currentAggregate = aggregateSummary(
+            from: currentWindow,
+            dateString: dateFormatter.string(from: now)
+        )
+        let previousAggregate = aggregateSummary(
+            from: Array(previousDailyMap.values),
+            dateString: dateFormatter.string(from: previousStart)
+        )
+        let currentSummary = StatsComputation.summary(from: currentSessions, calendar: calendar)
+        let previousSummary = StatsComputation.summary(from: previousSessions, calendar: calendar)
+
+        let snapshot = RangeSnapshot(
+            dailySummaries: currentWindow,
+            aggregate: currentAggregate,
+            previousAggregate: previousAggregate,
+            currentSummary: currentSummary,
+            previousSummary: previousSummary,
+            projectStats: currentDerived.projectStats,
+            maxProjectSessionCount: currentDerived.maxProjectSessionCount,
+            toolDistributionSorted: currentDerived.toolDistributionSorted,
+            totalToolUseCount: currentDerived.totalToolUseCountAllTime,
+            modelDistribution: currentDerived.modelDistribution,
+            averageMessagesPerSession: currentDerived.averageMessagesPerSession,
+            averageToolUsesPerSession: currentDerived.averageToolUsesPerSession,
+            durationBuckets: currentDerived.durationBuckets,
+            weeklyHourlyHeatmap: currentDerived.weeklyHourlyHeatmap,
+            sessions: currentSessions,
+            insights: StatsComputation.rangeInsights(
+                sessions: currentSessions,
+                currentSummary: currentSummary,
+                previousSummary: previousSummary,
+                calendar: calendar
+            ),
+            totalSessionCount: currentSessions.count
+        )
+
+        cachedRangeSnapshots[clampedDays] = snapshot
+        return snapshot
+    }
+
     // MARK: - 数据导出
 
     func exportCSV() -> String {
@@ -813,6 +1050,32 @@ final class StatsManager: ObservableObject {
         return summary
     }
 
+    private func aggregateSummary(from summaries: [DailySummary], dateString: String) -> DailySummary {
+        var summary = DailySummary(dateString: dateString)
+        for day in summaries {
+            summary.completionCount += day.completionCount
+            summary.totalCost += day.totalCost
+            summary.totalDurationSeconds += day.totalDurationSeconds
+            summary.totalInputTokens += day.totalInputTokens
+            summary.totalOutputTokens += day.totalOutputTokens
+            summary.totalCacheReadTokens += day.totalCacheReadTokens
+            summary.totalCacheCreationTokens += day.totalCacheCreationTokens
+            summary.totalToolUseCount += day.totalToolUseCount
+            summary.totalMessageCount += day.totalMessageCount
+
+            for (index, count) in day.hourlyDistribution.enumerated() {
+                if index < summary.hourlyDistribution.count {
+                    summary.hourlyDistribution[index] += count
+                }
+            }
+
+            for (tool, count) in day.toolDistribution {
+                summary.toolDistribution[tool, default: 0] += count
+            }
+        }
+        return summary
+    }
+
     private func buildRollingWindow(days: Int) -> [DailySummary] {
         let todayKey = dateFormatter.string(from: Date())
         let todaySummary = currentTodaySummary
@@ -829,6 +1092,23 @@ final class StatsManager: ObservableObject {
 
         if todaySummary.dateString == todayKey {
             result.append(todaySummary)
+        }
+
+        return result
+    }
+
+    private func buildRollingWindow(
+        days: Int,
+        referenceDate: Date,
+        dailyMap: [String: DailySummary]
+    ) -> [DailySummary] {
+        let calendar = Calendar.current
+        var result: [DailySummary] = []
+
+        for offset in (0..<days).reversed() {
+            let date = calendar.date(byAdding: .day, value: -offset, to: referenceDate) ?? referenceDate
+            let key = dateFormatter.string(from: date)
+            result.append(dailyMap[key] ?? DailySummary(dateString: key))
         }
 
         return result

@@ -20,6 +20,18 @@ Claude Glance passively reads local transcript data under `~/.claude/projects/` 
 - Local-only by default
 - No hook installation required
 
+## More Views
+
+Supplementary views for the menu bar workflow and local stats.
+
+![Floating panel detail](docs/screenshots/flottingpannel.png)
+
+Floating panel detail for recent activity and active session context.
+
+![Stats window](docs/screenshots/stastic.png)
+
+Stats view for local usage trends and lightweight analysis.
+
 ## Installation
 
 ### From Release

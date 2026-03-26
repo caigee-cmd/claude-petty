@@ -57,8 +57,8 @@ struct FloatingPanelShellStyle {
 
     init(field: FloatingPanelMotionField, hasToolRunning: Bool, hasThinking _: Bool) {
         accentColor = hasToolRunning ? .claudeCyan : .claudePurple
-        borderOpacity = 0.10 + (field.breathPhase * 0.04)
-        baseShadowOpacity = 0.05
+        borderOpacity = 0.07 + (field.breathPhase * 0.025)
+        baseShadowOpacity = 0.04
         usesDetachedTopHighlight = false
         usesGreenShellAccent = false
     }
@@ -118,21 +118,21 @@ struct IslandSessionRowStyle {
         usesIndependentDualGlow = false
         usesIndependentDotPulse = false
         usesCapsuleDrivenLift = isActive
-        rowLiftOpacity = isActive ? (0.04 + field.rowLiftProgress * 0.04) : 0
+        rowLiftOpacity = isActive ? (0.025 + field.rowLiftProgress * 0.03) : 0
         rowTintOpacity = isActive
-            ? ((isToolRunning ? 0.07 : 0.05) + field.rowLiftProgress * 0.03)
+            ? ((isToolRunning ? 0.042 : 0.030) + field.rowLiftProgress * 0.02)
             : 0
         rowVerticalOffset = isActive ? CGFloat(-0.5 - field.rowLiftProgress * 0.7) : 0
-        waveOpacity = isActive ? (isToolRunning ? 0.12 : 0.08) : 0
-        waveHighlightOpacity = isActive ? (isToolRunning ? 0.16 : 0.10) : 0
+        waveOpacity = isActive ? (isToolRunning ? 0.07 : 0.05) : 0
+        waveHighlightOpacity = isActive ? (isToolRunning ? 0.10 : 0.07) : 0
         waveWidth = isToolRunning ? 56 : 46
         waveTravel = field.wrappedFlowProgress
         dotHaloOpacity = isActive
-            ? ((isToolRunning ? 0.14 : 0.08) + field.dotHaloProgress * (isToolRunning ? 0.06 : 0.04))
+            ? ((isToolRunning ? 0.09 : 0.06) + field.dotHaloProgress * (isToolRunning ? 0.04 : 0.03))
             : 0
         dotHaloScaleUpperBound = isToolRunning ? 1.22 : 1.16
-        timerOpacity = 0.45
-        toolIconOpacity = isToolRunning ? 0.76 : 0.72
+        timerOpacity = 0.34
+        toolIconOpacity = isToolRunning ? 0.68 : 0.64
     }
 }
 
@@ -366,23 +366,23 @@ struct FloatingPanelView: View {
         }
         .background {
             shape
-                .fill(.thinMaterial)
+                .fill(.thinMaterial.opacity(0.86))
                 .overlay {
                     shape.fill(
                         Color(red: 0.78, green: 0.82, blue: 0.90)
-                            .opacity(0.10 + field.breathPhase * 0.02)
+                            .opacity(0.05 + field.breathPhase * 0.01)
                     )
                 }
                 .overlay {
-                    shape.fill(Color.white.opacity(0.12 + field.breathPhase * 0.02))
+                    shape.fill(Color.white.opacity(0.075 + field.breathPhase * 0.012))
                 }
                 .overlay(alignment: .top) {
                     shape
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color.white.opacity(0.08),
-                                    Color.white.opacity(0.02),
+                                    Color.white.opacity(0.045),
+                                    Color.white.opacity(0.012),
                                     Color.clear,
                                 ],
                                 startPoint: .top,
@@ -395,23 +395,23 @@ struct FloatingPanelView: View {
                     shape.strokeBorder(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(style.borderOpacity + 0.03),
-                                style.accentColor.opacity(0.015 + field.accentBlend * 0.012),
+                                Color.white.opacity(style.borderOpacity + 0.018),
+                                style.accentColor.opacity(0.009 + field.accentBlend * 0.007),
                             ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                        lineWidth: 0.4
+                        lineWidth: 0.45
                     )
                 }
                 .overlay {
                     shape.strokeBorder(
-                        Color.black.opacity(0.08),
-                        lineWidth: 0.55
+                        Color.black.opacity(0.04),
+                        lineWidth: 0.5
                     )
                 }
-                .shadow(color: .black.opacity(style.baseShadowOpacity), radius: 10, y: 4)
-                .shadow(color: .black.opacity(0.035), radius: 18, y: 8)
+                .shadow(color: .black.opacity(style.baseShadowOpacity), radius: 8, y: 3)
+                .shadow(color: .black.opacity(0.024), radius: 14, y: 6)
         }
         .modifier(HoverPreviewHelpModifier(isEnabled: isHoverPreview))
     }
@@ -426,9 +426,9 @@ struct FloatingPanelView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 9.5, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(.white.opacity(0.60))
                     .frame(width: 18, height: 18)
-                    .background(Color.white.opacity(0.06), in: Circle())
+                    .background(Color.white.opacity(0.04), in: Circle())
             }
             .buttonStyle(.plain)
         }
@@ -527,7 +527,7 @@ struct IslandSessionRow: View {
                 Circle()
                     .fill(statusColor)
                     .frame(width: 7, height: 7)
-                    .shadow(color: statusColor.opacity(session.status == .unknown ? 0.16 : 0.30), radius: 3)
+                    .shadow(color: statusColor.opacity(session.status == .unknown ? 0.12 : 0.20), radius: 2.5)
             }
             .frame(width: 16, height: 16)
 
@@ -561,10 +561,10 @@ struct IslandSessionRow: View {
         .frame(height: FloatingPanelLayout.rowHeight)
         .background {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.white.opacity(0.18))
+                .fill(Color.white.opacity(0.12))
                 .overlay {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color.white.opacity(0.08))
+                        .fill(Color.white.opacity(0.045))
                 }
                 .overlay {
                     if rowStyle.usesCapsuleDrivenLift {
@@ -576,16 +576,16 @@ struct IslandSessionRow: View {
                         .strokeBorder(
                             LinearGradient(
                                 colors: [
-                                    Color.white.opacity(0.28),
-                                    statusColor.opacity(rowStyle.usesCapsuleDrivenLift ? 0.16 + field.rowLiftProgress * 0.08 : 0.07),
+                                    Color.white.opacity(0.18),
+                                    statusColor.opacity(rowStyle.usesCapsuleDrivenLift ? 0.08 + field.rowLiftProgress * 0.05 : 0.04),
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            lineWidth: 0.75
+                            lineWidth: 0.7
                         )
                 }
-                .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
+                .shadow(color: Color.black.opacity(0.03), radius: 5, y: 2)
         }
         .offset(y: rowStyle.rowVerticalOffset)
     }
@@ -627,7 +627,7 @@ struct IslandSessionRow: View {
             .overlay {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .strokeBorder(
-                        statusColor.opacity(0.12 + rowStyle.rowLiftOpacity * 1.0),
+                        statusColor.opacity(0.07 + rowStyle.rowLiftOpacity * 0.6),
                         lineWidth: 0.55
                     )
             }
@@ -706,19 +706,19 @@ struct HoverPreviewSessionPill: View {
             Capsule(style: .continuous)
                 .fill(
                     Color(red: 0.78, green: 0.82, blue: 0.90)
-                        .opacity(0.16)
+                        .opacity(0.09)
                 )
                 .overlay {
                     Capsule(style: .continuous)
-                        .fill(Color.white.opacity(0.12))
+                        .fill(Color.white.opacity(0.07))
                 }
                 .overlay {
                     Capsule(style: .continuous)
                         .strokeBorder(
                             LinearGradient(
                                 colors: [
-                                    Color.white.opacity(0.28),
-                                    Color.black.opacity(0.06),
+                                    Color.white.opacity(0.18),
+                                    Color.black.opacity(0.04),
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -726,7 +726,7 @@ struct HoverPreviewSessionPill: View {
                             lineWidth: 0.6
                         )
                 }
-                .shadow(color: .black.opacity(0.03), radius: 6, y: 2)
+                .shadow(color: .black.opacity(0.02), radius: 5, y: 2)
         }
     }
 }

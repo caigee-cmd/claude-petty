@@ -9,8 +9,9 @@ struct ActivityRingsView: View {
     let weeklyProgress: Double
     let tokenProgress: Double
     let centerValue: String
-    let centerSubtitle: String
+    let centerSubtitle: String?
     var size: CGFloat = 150
+    var showsResetCountdown: Bool = true
 
     @State private var animatedSession: Double = 0
     @State private var animatedWeekly: Double = 0
@@ -99,14 +100,18 @@ struct ActivityRingsView: View {
                 .monospacedDigit()
                 .foregroundStyle(.primary)
 
-            Text(centerSubtitle)
-                .font(.system(size: size * 0.06, weight: .medium))
-                .foregroundStyle(.secondary)
+            if let centerSubtitle, !centerSubtitle.isEmpty {
+                Text(centerSubtitle)
+                    .font(.system(size: size * 0.06, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
 
             // 日重置倒计时（popover 打开时刷新一次即可）
-            Text(midnightText)
-                .font(.system(size: size * 0.055, weight: .medium, design: .monospaced))
-                .foregroundStyle(.tertiary)
+            if showsResetCountdown {
+                Text(midnightText)
+                    .font(.system(size: size * 0.055, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.tertiary)
+            }
         }
     }
 
