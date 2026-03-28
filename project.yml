@@ -50,7 +50,7 @@ targets:
         CFBundleName: Claude Glance
         CFBundleDisplayName: Claude Glance
         CFBundleIdentifier: com.claudedash.app
-        CFBundleShortVersionString: "1.1.0"
+        CFBundleShortVersionString: "0.0.8"
         CFBundleVersion: "1"
         LSUIElement: true
         LSMinimumSystemVersion: "14.0"
