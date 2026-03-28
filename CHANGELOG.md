@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.0.9] - 2026-03-28
+
+### Fixed
+
+- Release packaging now builds separate `arm64` and `x86_64` binaries before merging the universal app, and merges the bundled helper from the correct app resource path
+
 ## [0.0.8] - 2026-03-28
 
 ### Added
