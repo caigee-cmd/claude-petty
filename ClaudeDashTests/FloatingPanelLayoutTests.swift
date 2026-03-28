@@ -1,5 +1,5 @@
 import XCTest
-@testable import ClaudeDash
+@testable import ClaudeGlance
 
 final class FloatingPanelLayoutTests: XCTestCase {
     func testVisibleSessionCountIsCappedForTaskListStates() {
@@ -17,7 +17,7 @@ final class FloatingPanelLayoutTests: XCTestCase {
     }
 
     func testCompactModeUsesSlightlyLargerMascotWithinSameHitArea() {
-        XCTAssertEqual(FloatingPanelLayout.defaultMascotSize, FloatingMascotSizeOption.medium.mascotLength, accuracy: 0.1)
+        XCTAssertEqual(FloatingPanelLayout.defaultMascotSize, FloatingMascotSizeOption.extraLarge.mascotLength, accuracy: 0.1)
         XCTAssertLessThan(FloatingPanelLayout.defaultMascotSize, FloatingPanelLayout.defaultCompactIslandSize.width)
         XCTAssertLessThan(FloatingPanelLayout.defaultMascotSize, FloatingPanelLayout.defaultCompactIslandSize.height)
     }

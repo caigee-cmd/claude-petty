@@ -2,10 +2,11 @@ import SwiftUI
 import Lottie
 
 struct FloatingMascotLottieView: View {
+    let appearance: FloatingMascotAppearanceOption
     let playbackState: FloatingMascotPlaybackState
 
     var body: some View {
-        LottieView(animation: .named("sweet-run-cycle"))
+        LottieView(animation: .named(appearance.resourceName))
             .resizable()
             .playbackMode(lottiePlaybackMode)
             .animationSpeed(playbackSpeed)

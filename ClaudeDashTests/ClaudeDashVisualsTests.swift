@@ -1,12 +1,32 @@
 import SwiftUI
 import XCTest
-@testable import ClaudeDash
+@testable import ClaudeGlance
 
 final class ClaudeDashVisualsTests: XCTestCase {
+    private let mascotDefaultsKeys = [
+        FloatingMascotAppearanceOption.userDefaultsKey,
+        FloatingMascotSizeOption.userDefaultsKey,
+        FloatingMascotAnimationSpeedOption.userDefaultsKey,
+        FloatingMascotPreferences.enabledUserDefaultsKey,
+        FloatingMascotPreferences.didCompleteSetupUserDefaultsKey
+    ]
+    private var preservedMascotDefaults: [String: Any] = [:]
+
     private var projectRootURL: URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
+    }
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        preserveMascotDefaults()
+        resetMascotDefaults()
+    }
+
+    override func tearDownWithError() throws {
+        restoreMascotDefaults()
+        try super.tearDownWithError()
     }
 
     private func makeActiveSession(status: SessionStatus) -> ActiveSession {
@@ -16,6 +36,43 @@ final class ClaudeDashVisualsTests: XCTestCase {
         )
         session.status = status
         return session
+    }
+
+    private func preserveMascotDefaults() {
+        preservedMascotDefaults = [:]
+        let defaults = ClaudeDashDefaults.shared
+
+        for key in mascotDefaultsKeys {
+            if let value = defaults.object(forKey: key) {
+                preservedMascotDefaults[key] = value
+            }
+        }
+    }
+
+    private func resetMascotDefaults() {
+        let defaults = ClaudeDashDefaults.shared
+        defaults.set(FloatingMascotAppearanceOption.runner.rawValue, forKey: FloatingMascotAppearanceOption.userDefaultsKey)
+        defaults.set(FloatingMascotSizeOption.extraLarge.rawValue, forKey: FloatingMascotSizeOption.userDefaultsKey)
+        defaults.set(
+            FloatingMascotAnimationSpeedOption.normal.rawValue,
+            forKey: FloatingMascotAnimationSpeedOption.userDefaultsKey
+        )
+        defaults.set(false, forKey: FloatingMascotPreferences.enabledUserDefaultsKey)
+        defaults.set(false, forKey: FloatingMascotPreferences.didCompleteSetupUserDefaultsKey)
+    }
+
+    private func restoreMascotDefaults() {
+        let defaults = ClaudeDashDefaults.shared
+
+        for key in mascotDefaultsKeys {
+            if let value = preservedMascotDefaults[key] {
+                defaults.set(value, forKey: key)
+            } else {
+                defaults.removeObject(forKey: key)
+            }
+        }
+
+        preservedMascotDefaults = [:]
     }
 
     func testNotificationTitleUsesPlainTextWithoutEmoji() {
@@ -31,6 +88,18 @@ final class ClaudeDashVisualsTests: XCTestCase {
         XCTAssertEqual(ClaudeDashSymbols.monitorSelectionState, "rectangle.stack")
         XCTAssertEqual(ClaudeDashSymbols.totalCost, "dollarsign.circle")
         XCTAssertEqual(ClaudeDashSymbols.model, "square.stack.3d.up")
+    }
+
+    func testMascotAppearanceOptionsExposeExpectedTitlesAndUniqueResources() {
+        XCTAssertEqual(
+            FloatingMascotAppearanceOption.allCases.map(\.title),
+            ["跑步", "喝水", "躲藏", "篮球", "吉他", "萨克斯", "惊讶", "气球"]
+        )
+
+        let resourceNames = FloatingMascotAppearanceOption.allCases.map(\.resourceName)
+        XCTAssertEqual(Set(resourceNames).count, resourceNames.count)
+        XCTAssertTrue(resourceNames.contains("sweet-run-cycle"))
+        XCTAssertTrue(resourceNames.contains("cat-hide"))
     }
 
     func testFloatingPanelRulesUseCapsuleAsOnlyMotionAuthority() {
@@ -143,8 +212,8 @@ final class ClaudeDashVisualsTests: XCTestCase {
             hasThinking: false
         )
 
-        XCTAssertEqual(activeStyle.baseShadowOpacity, 0.05, accuracy: 0.001)
-        XCTAssertEqual(idleStyle.baseShadowOpacity, 0.05, accuracy: 0.001)
+        XCTAssertEqual(activeStyle.baseShadowOpacity, 0.04, accuracy: 0.001)
+        XCTAssertEqual(idleStyle.baseShadowOpacity, 0.04, accuracy: 0.001)
     }
 
     func testFloatingPanelShellStyleKeepsIdleAndCompletionStatesInShellPalette() {
@@ -196,9 +265,9 @@ final class ClaudeDashVisualsTests: XCTestCase {
             field: FloatingPanelMotionField(time: 20, hasLiveActivity: true)
         )
 
-        XCTAssertEqual(thinkingStyle.timerOpacity, 0.45, accuracy: 0.001)
-        XCTAssertEqual(toolStyle.timerOpacity, 0.45, accuracy: 0.001)
-        XCTAssertEqual(toolStyle.toolIconOpacity, 0.76, accuracy: 0.001)
+        XCTAssertEqual(thinkingStyle.timerOpacity, 0.34, accuracy: 0.001)
+        XCTAssertEqual(toolStyle.timerOpacity, 0.34, accuracy: 0.001)
+        XCTAssertEqual(toolStyle.toolIconOpacity, 0.68, accuracy: 0.001)
     }
 
     func testCompletedRowKeepsGreenLocalWithoutChangingShellRules() {

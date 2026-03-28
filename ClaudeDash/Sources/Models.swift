@@ -17,6 +17,7 @@ enum ClaudeDashDefaults {
         "ClaudeDash_enableSummary",
         "ClaudeDash_longTaskOnly",
         "ClaudeDash_dailyCostBudget",
+        FloatingMascotAppearanceOption.userDefaultsKey,
         FloatingMascotSizeOption.userDefaultsKey,
         FloatingMascotAnimationSpeedOption.userDefaultsKey,
         FloatingMascotPreferences.enabledUserDefaultsKey,
@@ -51,6 +52,47 @@ enum FloatingMascotPreferences {
 
     static func markSetupCompleted(defaults: UserDefaults = ClaudeDashDefaults.shared) {
         defaults.set(true, forKey: didCompleteSetupUserDefaultsKey)
+    }
+}
+
+enum FloatingMascotAppearanceOption: String, Codable, CaseIterable, Identifiable, Sendable {
+    case runner
+    case catDrink
+    case catHide
+    case catBall
+    case catGuitar
+    case catSax
+    case catSurprise
+    case catBalloons
+
+    static let userDefaultsKey = "ClaudeDash_floatingMascotAppearance"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .runner: return "跑步"
+        case .catDrink: return "喝水"
+        case .catHide: return "躲藏"
+        case .catBall: return "篮球"
+        case .catGuitar: return "吉他"
+        case .catSax: return "萨克斯"
+        case .catSurprise: return "惊讶"
+        case .catBalloons: return "气球"
+        }
+    }
+
+    var resourceName: String {
+        switch self {
+        case .runner: return "sweet-run-cycle"
+        case .catDrink: return "cat-drink"
+        case .catHide: return "cat-hide"
+        case .catBall: return "cat-ball"
+        case .catGuitar: return "cat-guitar"
+        case .catSax: return "cat-sax"
+        case .catSurprise: return "cat-surprise"
+        case .catBalloons: return "cat-balloons"
+        }
     }
 }
 
@@ -260,12 +302,12 @@ enum FloatingMascotSizeOption: String, Codable, CaseIterable, Identifiable, Send
 
     var mascotLength: CGFloat {
         switch self {
-        case .compact: return 72
-        case .small: return 82
-        case .medium: return 92
-        case .large: return 104
-        case .extraLarge: return 118
-        case .jumbo: return 134
+        case .compact: return 78
+        case .small: return 88
+        case .medium: return 100
+        case .large: return 114
+        case .extraLarge: return 128
+        case .jumbo: return 144
         }
     }
 }

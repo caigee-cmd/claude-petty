@@ -265,7 +265,7 @@ final class FloatingPanelController {
 
     private var currentMascotSizeOption: FloatingMascotSizeOption {
         let rawValue = ClaudeDashDefaults.shared.string(forKey: FloatingMascotSizeOption.userDefaultsKey)
-        return FloatingMascotSizeOption(rawValue: rawValue ?? FloatingMascotSizeOption.medium.rawValue) ?? .medium
+        return FloatingMascotSizeOption(rawValue: rawValue ?? FloatingMascotSizeOption.extraLarge.rawValue) ?? .extraLarge
     }
 
     private func restorePreferredVisibilityIfNeeded() {

@@ -18,6 +18,21 @@ packages:
   Lottie:
     path: Vendor/lottie-spm
 
+schemes:
+  ClaudeDash:
+    build:
+      targets:
+        ClaudeDash: all
+        ClaudeDashHelper: [build]
+        ClaudeDashTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: false
+      targets:
+        - name: ClaudeDashTests
+
 targets:
 
   ClaudeDash:
@@ -35,7 +50,7 @@ targets:
         CFBundleName: Claude Glance
         CFBundleDisplayName: Claude Glance
         CFBundleIdentifier: com.claudedash.app
-        CFBundleShortVersionString: "1.0.0"
+        CFBundleShortVersionString: "1.1.0"
         CFBundleVersion: "1"
         LSUIElement: true
         LSMinimumSystemVersion: "14.0"
@@ -78,3 +93,5 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: true
         PRODUCT_BUNDLE_IDENTIFIER: com.claudedash.tests
+        BUNDLE_LOADER: "$(BUILT_PRODUCTS_DIR)/ClaudeGlance.app/Contents/MacOS/ClaudeGlance"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/ClaudeGlance.app/Contents/MacOS/ClaudeGlance"

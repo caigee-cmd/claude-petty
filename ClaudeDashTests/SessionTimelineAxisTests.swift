@@ -1,5 +1,5 @@
 import XCTest
-@testable import ClaudeDash
+@testable import ClaudeGlance
 
 final class SessionTimelineAxisTests: XCTestCase {
     func testTicksIncludeEndOfDayWithoutInvalidHour() {

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.1.0] - 2026-03-28
+
+### Added
+
+- README mascot preview GIFs for selected animated mascots
+
+### Changed
+
+- Refined the mascot settings UI into a more minimal single-panel layout with fewer visible labels and a larger default mascot size
+
 ## [1.0.0] - 2026-03-24
 
 ### Added

@@ -8,6 +8,13 @@
 - `stats-window.png`
 - `floating-panel.png`
 
+如果你想把挂件放到 README 最前面，也可以补一组小 GIF：
+
+- `mascots/mascot-runner.gif`
+- `mascots/mascot-hide.gif`
+- `mascots/mascot-guitar.gif`
+- `mascots/mascot-balloons.gif`
+
 如果你想做一张用于仓库首页的横幅图，也可以补：
 
 - `social-preview.png`
@@ -23,9 +30,10 @@
 
 建议在仓库首页按这个顺序展示：
 
-1. 菜单栏 popover
-2. 详细统计窗口
-3. 浮动面板
+1. 挂件预览 GIF
+2. 菜单栏 popover
+3. 详细统计窗口
+4. 浮动面板
 
 ## Release 页面建议
 

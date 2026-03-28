@@ -139,9 +139,13 @@ struct IslandSessionRowStyle {
 struct FloatingPanelView: View {
     @EnvironmentObject var sessionMonitor: SessionMonitor
     @AppStorage(
+        FloatingMascotAppearanceOption.userDefaultsKey,
+        store: ClaudeDashDefaults.shared
+    ) private var mascotAppearanceRawValue = FloatingMascotAppearanceOption.runner.rawValue
+    @AppStorage(
         FloatingMascotSizeOption.userDefaultsKey,
         store: ClaudeDashDefaults.shared
-    ) private var mascotSizeRawValue = FloatingMascotSizeOption.medium.rawValue
+    ) private var mascotSizeRawValue = FloatingMascotSizeOption.extraLarge.rawValue
     @ObservedObject var interactionModel: FloatingPanelInteractionModel
 
     init(interactionModel: FloatingPanelInteractionModel) {
@@ -168,7 +172,11 @@ struct FloatingPanelView: View {
     }
 
     private var mascotSizeOption: FloatingMascotSizeOption {
-        FloatingMascotSizeOption(rawValue: mascotSizeRawValue) ?? .medium
+        FloatingMascotSizeOption(rawValue: mascotSizeRawValue) ?? .extraLarge
+    }
+
+    private var mascotAppearanceOption: FloatingMascotAppearanceOption {
+        FloatingMascotAppearanceOption(rawValue: mascotAppearanceRawValue) ?? .runner
     }
 
     private var mascotSize: CGFloat {
@@ -277,7 +285,10 @@ struct FloatingPanelView: View {
                     .blur(radius: 12)
                     .offset(y: shadowOffsetY)
 
-                FloatingMascotLottieView(playbackState: interactionModel.mascotPlaybackState)
+                FloatingMascotLottieView(
+                    appearance: mascotAppearanceOption,
+                    playbackState: interactionModel.mascotPlaybackState
+                )
                     .frame(width: mascotSize, height: mascotSize)
                     .scaleEffect(0.98 + (Double(interactionModel.tapBoostCount) * 0.02))
 
@@ -296,7 +307,7 @@ struct FloatingPanelView: View {
         .frame(width: compactIslandSize.width, height: compactIslandSize.height)
         .contentShape(Rectangle())
         .onHover { interactionModel.setHoveringMascot($0) }
-        .help("点击小跑步角色可以临时加速动画")
+        .help("点击精灵可以临时加速动画")
     }
 
     private func taskListPanel(

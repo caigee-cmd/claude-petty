@@ -191,7 +191,7 @@ final class StatusBarController: NSObject {
         )
         let window = makeWindow(
             title: "Claude Glance 设置",
-            size: NSSize(width: 560, height: isFirstLaunchSetup ? 420 : 360),
+            size: NSSize(width: 488, height: isFirstLaunchSetup ? 442 : 412),
             content: settingsView
         )
         window.isOpaque = true
@@ -211,7 +211,7 @@ final class StatusBarController: NSObject {
         window.center()
         window.title = title
         window.titlebarAppearsTransparent = true
-        window.titleVisibility = .visible
+        window.titleVisibility = .hidden
         window.isOpaque = false
         window.backgroundColor = .clear
         window.contentView = NSHostingView(rootView: content)

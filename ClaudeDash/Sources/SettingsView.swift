@@ -1,25 +1,19 @@
 import SwiftUI
 
 private enum SettingsPanelStyle {
-    static let windowWidth: CGFloat = 520
-    static let cardSpacing: CGFloat = 10
-    static let sizeGridColumns = [
-        GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: cardSpacing),
-        GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: cardSpacing),
-        GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: cardSpacing),
-    ]
-
-    static var titleFont: Font {
-        .system(size: 18, weight: .semibold)
-    }
-
-    static var cardTitleFont: Font {
-        .system(size: 13, weight: .semibold, design: .rounded)
-    }
-
-    static var metaFont: Font {
-        .system(size: 11, weight: .medium, design: .rounded)
-    }
+    static let windowWidth: CGFloat = 488
+    static let sectionSpacing: CGFloat = 14
+    static let shellPadding: CGFloat = 16
+    static let shellSpacing: CGFloat = 14
+    static let shellCornerRadius: CGFloat = 26
+    static let previewHeight: CGFloat = 232
+    static let controlPadding: CGFloat = 12
+    static let optionSpacing: CGFloat = 8
+    static let optionPreviewSize: CGFloat = 46
+    static let appearanceColumns = Array(
+        repeating: GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: optionSpacing),
+        count: 4
+    )
 }
 
 struct SettingsView: View {
@@ -31,9 +25,13 @@ struct SettingsView: View {
         store: ClaudeDashDefaults.shared
     ) private var isMascotEnabled = false
     @AppStorage(
+        FloatingMascotAppearanceOption.userDefaultsKey,
+        store: ClaudeDashDefaults.shared
+    ) private var mascotAppearanceRawValue = FloatingMascotAppearanceOption.runner.rawValue
+    @AppStorage(
         FloatingMascotSizeOption.userDefaultsKey,
         store: ClaudeDashDefaults.shared
-    ) private var mascotSizeRawValue = FloatingMascotSizeOption.medium.rawValue
+    ) private var mascotSizeRawValue = FloatingMascotSizeOption.extraLarge.rawValue
     @AppStorage(
         FloatingMascotAnimationSpeedOption.userDefaultsKey,
         store: ClaudeDashDefaults.shared
@@ -51,210 +49,397 @@ struct SettingsView: View {
         self.onFinishSetup = onFinishSetup
     }
 
+    private var selectedAppearance: FloatingMascotAppearanceOption {
+        FloatingMascotAppearanceOption(rawValue: mascotAppearanceRawValue) ?? .runner
+    }
+
     private var selectedMascotSize: FloatingMascotSizeOption {
-        FloatingMascotSizeOption(rawValue: mascotSizeRawValue) ?? .medium
+        FloatingMascotSizeOption(rawValue: mascotSizeRawValue) ?? .extraLarge
     }
 
     private var selectedAnimationSpeed: FloatingMascotAnimationSpeedOption {
         FloatingMascotAnimationSpeedOption(rawValue: mascotAnimationSpeedRawValue) ?? .normal
     }
 
+    private var previewPlaybackState: FloatingMascotPlaybackState {
+        isMascotEnabled ? .playing(speed: selectedAnimationSpeed.multiplier) : .stoppedAtFirstFrame
+    }
+
+    private var previewMascotLength: CGFloat {
+        min(selectedMascotSize.mascotLength + 52, 196)
+    }
+
+    private var previewAccentColor: Color {
+        isMascotEnabled ? .accentColor : .claudePurple
+    }
+
+    private var speedSymbolName: String {
+        switch selectedAnimationSpeed {
+        case .slow:
+            return "tortoise.fill"
+        case .normal:
+            return "speedometer"
+        case .fast:
+            return "hare.fill"
+        case .veryFast:
+            return "bolt.fill"
+        }
+    }
+
+    private var sizeSliderBinding: Binding<Double> {
+        Binding(
+            get: {
+                Double(FloatingMascotSizeOption.allCases.firstIndex(of: selectedMascotSize) ?? 2)
+            },
+            set: { newValue in
+                let allCases = FloatingMascotSizeOption.allCases
+                let clampedIndex = min(max(Int(newValue.rounded()), 0), allCases.count - 1)
+                applyMascotSize(allCases[clampedIndex])
+            }
+        )
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            header
-
-            VStack(alignment: .leading, spacing: 10) {
-                Toggle(isOn: $isMascotEnabled) {
-                    Text("悬浮精灵")
-                        .font(.system(size: 13, weight: .semibold))
-                }
-                .toggleStyle(.switch)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color.white.opacity(0.035))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .strokeBorder(Color.white.opacity(0.07), lineWidth: 0.6)
-                        }
-                )
-            }
-
-            VStack(alignment: .leading, spacing: 10) {
-                LazyVGrid(columns: SettingsPanelStyle.sizeGridColumns, spacing: SettingsPanelStyle.cardSpacing) {
-                    ForEach(FloatingMascotSizeOption.allCases) { option in
-                        FloatingMascotSizeCard(
-                            option: option,
-                            isSelected: option == selectedMascotSize
-                        ) {
-                            mascotSizeRawValue = option.rawValue
-                            NotificationCenter.default.post(name: .floatingMascotSizeDidChange, object: nil)
-                        }
-                    }
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    ForEach(FloatingMascotAnimationSpeedOption.allCases) { option in
-                        Button {
-                            mascotAnimationSpeedRawValue = option.rawValue
-                        } label: {
-                            VStack(spacing: 3) {
-                                Text(option.title)
-                                    .font(.system(size: 12, weight: .semibold))
-                                Text(String(format: "%.2fx", option.multiplier))
-                                    .font(.system(size: 10, weight: .medium, design: .rounded))
-                                    .foregroundStyle(.secondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 9)
-                            .background(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(option == selectedAnimationSpeed ? Color.accentColor.opacity(0.12) : Color.white.opacity(0.03))
-                                    .overlay {
-                                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                            .strokeBorder(
-                                                option == selectedAnimationSpeed ? Color.accentColor.opacity(0.28) : Color.white.opacity(0.06),
-                                                lineWidth: option == selectedAnimationSpeed ? 0.9 : 0.6
-                                            )
-                                    }
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-
-            if isFirstLaunchSetup {
-                HStack(spacing: 10) {
-                    Button("完成") {
-                        didCompleteSetup = true
-                        onFinishSetup?()
-                    }
-                    .buttonStyle(.borderedProminent)
-
-                    Button("稍后") {
-                        onFinishSetup?()
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundStyle(.secondary)
-                }
-                .padding(.top, 2)
-            }
+        VStack(alignment: .leading, spacing: SettingsPanelStyle.sectionSpacing) {
+            contentCard
+            footer
         }
         .padding(18)
         .frame(width: SettingsPanelStyle.windowWidth)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(windowBackground)
         .onChange(of: isMascotEnabled) {
             didCompleteSetup = true
         }
     }
 
-    private var header: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("精灵")
-                    .font(SettingsPanelStyle.titleFont)
+    private var windowBackground: some View {
+        ZStack {
+            Color(nsColor: .windowBackgroundColor)
 
-                if isFirstLaunchSetup {
-                    Text("先选开关和大小")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
+            Circle()
+                .fill(Color.claudePurple.opacity(0.09))
+                .frame(width: 240, height: 240)
+                .blur(radius: 120)
+                .offset(x: -150, y: -140)
+
+            Circle()
+                .fill(Color.claudeCyan.opacity(0.06))
+                .frame(width: 200, height: 200)
+                .blur(radius: 96)
+                .offset(x: 130, y: -90)
+        }
+    }
+
+    private var contentCard: some View {
+        VStack(alignment: .leading, spacing: SettingsPanelStyle.shellSpacing) {
+            previewStage
+            appearanceGrid
+            controlRail
+        }
+        .padding(SettingsPanelStyle.shellPadding)
+        .background(contentShellBackground)
+    }
+
+    private var contentShellBackground: some View {
+        RoundedRectangle(cornerRadius: SettingsPanelStyle.shellCornerRadius, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.055),
+                        Color.white.opacity(0.028)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: SettingsPanelStyle.shellCornerRadius, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.12),
+                                previewAccentColor.opacity(0.14)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 0.8
+                    )
+            }
+            .shadow(color: .black.opacity(0.12), radius: 24, y: 14)
+    }
+
+    private var previewStage: some View {
+        RoundedRectangle(cornerRadius: 22, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        previewAccentColor.opacity(isMascotEnabled ? 0.15 : 0.09),
+                        Color.white.opacity(0.03)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                previewAccentColor.opacity(isMascotEnabled ? 0.18 : 0.10),
+                                Color.white.opacity(0.08)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 0.8
+                    )
+            }
+            .overlay(alignment: .topTrailing) {
+                HStack(spacing: 10) {
+                    Circle()
+                        .fill(isMascotEnabled ? previewAccentColor : Color.white.opacity(0.18))
+                        .frame(width: 8, height: 8)
+                        .overlay {
+                            Circle()
+                                .strokeBorder(Color.white.opacity(0.26), lineWidth: 0.8)
+                        }
+
+                    Toggle("", isOn: $isMascotEnabled)
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                        .accessibilityLabel("启用悬浮精灵")
+                        .controlSize(.mini)
+                }
+                .padding(.horizontal, 11)
+                .padding(.vertical, 9)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(Color.white.opacity(0.045))
+                        .overlay {
+                            Capsule(style: .continuous)
+                                .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.6)
+                        }
+                )
+                .padding(14)
+            }
+            .overlay {
+                ZStack {
+                    Ellipse()
+                        .fill(Color.black.opacity(0.07))
+                        .frame(width: 144, height: 22)
+                        .blur(radius: 16)
+                        .offset(y: 48)
+
+                    Circle()
+                        .fill(previewAccentColor.opacity(isMascotEnabled ? 0.15 : 0.08))
+                        .frame(width: 148, height: 148)
+                        .blur(radius: 44)
+                        .offset(y: 10)
+
+                    Circle()
+                        .fill(Color.white.opacity(0.045))
+                        .frame(width: 94, height: 94)
+                        .blur(radius: 20)
+                        .offset(y: -16)
+
+                    FloatingMascotLottieView(
+                        appearance: selectedAppearance,
+                        playbackState: previewPlaybackState
+                    )
+                    .frame(width: previewMascotLength, height: previewMascotLength)
                 }
             }
+            .frame(maxWidth: .infinity)
+            .frame(height: SettingsPanelStyle.previewHeight)
+            .help(selectedAppearance.title)
+    }
 
-            Spacer()
+    private var appearanceGrid: some View {
+        LazyVGrid(columns: SettingsPanelStyle.appearanceColumns, spacing: SettingsPanelStyle.optionSpacing) {
+            ForEach(FloatingMascotAppearanceOption.allCases) { option in
+                MascotAppearanceTile(
+                    option: option,
+                    isSelected: option == selectedAppearance,
+                    playbackState: option == selectedAppearance ? previewPlaybackState : .stoppedAtFirstFrame
+                ) {
+                    mascotAppearanceRawValue = option.rawValue
+                }
+            }
+        }
+    }
 
-            HStack(spacing: 6) {
-                Text(isMascotEnabled ? "已开启" : "已关闭")
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                Text("\(Int(selectedMascotSize.mascotLength))pt · \(selectedAnimationSpeed.title)")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
+    private var controlRail: some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+
+                Slider(
+                    value: sizeSliderBinding.animation(.spring(response: 0.24, dampingFraction: 0.88)),
+                    in: 0...Double(FloatingMascotSizeOption.allCases.count - 1),
+                    step: 1
+                )
+                .accessibilityLabel("精灵大小")
+                .accessibilityValue(selectedMascotSize.title)
+
+                Image(systemName: "circle.circle")
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(Color.accentColor.opacity(0.08))
-            )
+            .frame(maxWidth: .infinity)
+
+            Rectangle()
+                .fill(Color.white.opacity(0.08))
+                .frame(width: 1, height: 22)
+
+            Menu {
+                ForEach(FloatingMascotAnimationSpeedOption.allCases) { option in
+                    Button {
+                        mascotAnimationSpeedRawValue = option.rawValue
+                    } label: {
+                        Label(option.title, systemImage: option.menuSymbolName)
+                    }
+                }
+            } label: {
+                Image(systemName: speedSymbolName)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 28, height: 28)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.white.opacity(0.05))
+                    )
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .accessibilityLabel("动画速度")
+            .accessibilityValue(selectedAnimationSpeed.title)
+        }
+        .padding(SettingsPanelStyle.controlPadding)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.white.opacity(0.034))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.06), lineWidth: 0.6)
+                }
+        )
+    }
+
+    @ViewBuilder
+    private var footer: some View {
+        if isFirstLaunchSetup {
+            HStack(spacing: 10) {
+                Button("完成") {
+                    didCompleteSetup = true
+                    onFinishSetup?()
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button("稍后") {
+                    onFinishSetup?()
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
+            }
+        } else {
+            HStack {
+                Spacer(minLength: 0)
+
+                Button {
+                    restoreDefaults()
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 12, weight: .semibold))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
+                .help("恢复默认设置")
+                .accessibilityLabel("恢复默认设置")
+            }
+        }
+    }
+
+    private func applyMascotSize(_ option: FloatingMascotSizeOption) {
+        guard mascotSizeRawValue != option.rawValue else { return }
+        mascotSizeRawValue = option.rawValue
+        NotificationCenter.default.post(name: .floatingMascotSizeDidChange, object: nil)
+    }
+
+    private func restoreDefaults() {
+        isMascotEnabled = false
+        mascotAppearanceRawValue = FloatingMascotAppearanceOption.runner.rawValue
+        mascotAnimationSpeedRawValue = FloatingMascotAnimationSpeedOption.normal.rawValue
+        applyMascotSize(.extraLarge)
+        didCompleteSetup = true
+    }
+}
+
+private extension FloatingMascotAnimationSpeedOption {
+    var menuSymbolName: String {
+        switch self {
+        case .slow:
+            return "tortoise.fill"
+        case .normal:
+            return "speedometer"
+        case .fast:
+            return "hare.fill"
+        case .veryFast:
+            return "bolt.fill"
         }
     }
 }
 
-private struct FloatingMascotSizeCard: View {
-    let option: FloatingMascotSizeOption
+private struct MascotAppearanceTile: View {
+    let option: FloatingMascotAppearanceOption
     let isSelected: Bool
+    let playbackState: FloatingMascotPlaybackState
     let action: () -> Void
-
-    private var previewHeight: CGFloat {
-        max(124, option.mascotLength + 34)
-    }
-
-    private var shadowWidth: CGFloat {
-        max(54, option.mascotLength * 0.7)
-    }
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 8) {
-                ZStack(alignment: .topTrailing) {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color.white.opacity(isSelected ? 0.06 : 0.03))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .strokeBorder(
-                                    isSelected ? Color.accentColor.opacity(0.35) : Color.white.opacity(0.06),
-                                    lineWidth: isSelected ? 1.0 : 0.6
-                                )
-                        }
-
-                    ZStack {
-                        Ellipse()
-                            .fill(Color.black.opacity(0.06))
-                            .frame(width: shadowWidth, height: 12)
-                            .blur(radius: 9)
-                            .offset(y: 28)
-
-                        Circle()
-                            .fill(Color.claudePurple.opacity(isSelected ? 0.12 : 0.08))
-                            .frame(width: 44, height: 44)
-                            .blur(radius: 16)
-                            .offset(y: 8)
-
-                        FloatingMascotLottieView(playbackState: .stoppedAtFirstFrame)
-                            .frame(width: option.mascotLength, height: option.mascotLength)
+            ZStack {
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: isSelected
+                                ? [Color.accentColor.opacity(0.18), Color.white.opacity(0.08)]
+                                : [Color.white.opacity(0.045), Color.white.opacity(0.03)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 15, style: .continuous)
+                            .strokeBorder(
+                                isSelected ? Color.accentColor.opacity(0.34) : Color.white.opacity(0.06),
+                                lineWidth: isSelected ? 1.0 : 0.6
+                            )
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.top, 10)
 
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(Color.accentColor)
-                            .padding(10)
-                    }
-                }
-                .frame(height: previewHeight)
+                Ellipse()
+                    .fill(Color.black.opacity(0.05))
+                    .frame(width: 30, height: 7)
+                    .blur(radius: 6)
+                    .offset(y: 12)
 
-                HStack(spacing: 6) {
-                    Text(option.title)
-                        .font(SettingsPanelStyle.cardTitleFont)
-                        .foregroundStyle(.primary)
-
-                    Spacer(minLength: 0)
-
-                    Text("\(Int(option.mascotLength))pt")
-                        .font(SettingsPanelStyle.metaFont)
-                        .foregroundStyle(.secondary)
-                }
+                FloatingMascotLottieView(
+                    appearance: option,
+                    playbackState: playbackState
+                )
+                .frame(width: SettingsPanelStyle.optionPreviewSize, height: SettingsPanelStyle.optionPreviewSize)
             }
-            .padding(9)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .frame(height: 58)
+            .scaleEffect(isSelected ? 1.03 : 1.0)
+            .offset(y: isSelected ? -1 : 0)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("选择\(option.title)形象")
+        .accessibilityValue(isSelected ? "已选中" : "未选中")
+        .help(option.title)
+        .animation(.spring(response: 0.24, dampingFraction: 0.84), value: isSelected)
     }
 }

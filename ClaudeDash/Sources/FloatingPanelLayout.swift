@@ -40,8 +40,8 @@ enum FloatingPanelLayout {
     static let rowHeight: CGFloat = 42
     static let idleRowHeight: CGFloat = 20
     static let rowSpacing: CGFloat = 6
-    static let defaultMascotSize: CGFloat = FloatingMascotSizeOption.medium.mascotLength
-    static let defaultCompactIslandSize = compactIslandSize(for: .medium)
+    static let defaultMascotSize: CGFloat = FloatingMascotSizeOption.extraLarge.mascotLength
+    static let defaultCompactIslandSize = compactIslandSize(for: .extraLarge)
     static let badgeSize: CGFloat = 24
     static let maxVisibleSessions = 4
     static let previewVisibleSessions = 3
@@ -56,7 +56,7 @@ enum FloatingPanelLayout {
     }
 
     static func compactIslandSize(for option: FloatingMascotSizeOption) -> CGSize {
-        let side = max(88, option.mascotLength + 10)
+        let side = max(92, option.mascotLength + 12)
         return CGSize(width: side, height: side)
     }
 
@@ -82,7 +82,7 @@ enum FloatingPanelLayout {
         for mode: FloatingPanelDisplayMode,
         totalSessionCount totalCount: Int
     ) -> CGSize {
-        panelSize(for: mode, totalSessionCount: totalCount, mascotSizeOption: .medium)
+        panelSize(for: mode, totalSessionCount: totalCount, mascotSizeOption: .extraLarge)
     }
 
     static func panelSize(
@@ -145,7 +145,7 @@ enum FloatingPanelLayout {
     }
 
     static func panelHeight(forTotalSessionCount totalCount: Int) -> CGFloat {
-        panelHeight(forTotalSessionCount: totalCount, mascotSizeOption: .medium)
+        panelHeight(forTotalSessionCount: totalCount, mascotSizeOption: .extraLarge)
     }
 
     static func panelHeight(
