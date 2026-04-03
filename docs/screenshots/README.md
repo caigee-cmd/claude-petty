@@ -6,7 +6,7 @@ This folder stores visual assets used by the GitHub README, release notes, and s
 
 ## Current Assets
 
-- `claude-demo.gif`
+- `claude-glance-demo.gif`
 - `claude-glance-demo.mp4`
 - `menupannel.png`
 - `settingpannel-cat-floting.png`
@@ -22,7 +22,7 @@ Notes:
 ## Recommended README Order
 
 1. One-sentence value proposition
-2. `claude-demo.gif`
+2. `claude-glance-demo.gif`
 3. Highlights list
 4. `menupannel.png`
 5. `settingpannel-cat-floting.png` + `settingpannel-cat-play-guitart.png` side by side
@@ -60,7 +60,7 @@ Notes:
 GitHub Release 文案里至少放：
 
 - 一张主封面图，优先使用从 `claude-glance-demo.mp4` 导出的 16:9 封面
-- README 首页优先使用 `claude-demo.gif`
+- README 首页优先使用 `claude-glance-demo.gif`
 - 一个视频入口，直接链接 `claude-glance-demo.mp4`
 - 当前版本亮点
 - 已知限制

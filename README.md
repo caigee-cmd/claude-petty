@@ -8,7 +8,7 @@ Claude Glance passively reads local transcript data under `~/.claude/projects/` 
 
 ## Demo
 
-![Claude Glance demo](https://claude-glance-1390058464.cos.ap-singapore.myqcloud.com/claude-demo.gif)
+![Claude Glance demo](https://claude-glance-1390058464.cos.ap-singapore.myqcloud.com/claude-glance-demo.gif)
 
 A short walkthrough of the menu bar overview, daily stats, and mascot settings.
 
