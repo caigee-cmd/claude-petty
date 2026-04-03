@@ -4,35 +4,51 @@
 
 一个原生 macOS 菜单栏应用，用来查看 Claude Code 的本地活动、活跃会话和轻量统计。
 
-<p align="center">
-  <img src="docs/screenshots/mascots/cat_annimation21321.gif" width="96" alt="动态挂件" />
-  <img src="docs/screenshots/mascots/catanimation_simple.gif" width="96" alt="简单动态挂件" />
-  <img src="docs/screenshots/mascots/cat_guitar.gif" width="96" alt="吉他挂件" />
-</p>
-
-<p align="center"><sub>动态挂件，本地优先。</sub></p>
-
-![Claude Glance Demo](docs/screenshots/claude-glance-demo.gif)
-
-[观看 MP4 演示](docs/screenshots/claude-glance-demo.mp4)
-
 Claude Glance 默认以被动读取方式工作：扫描 `~/.claude/projects/` 下的本地 transcript 数据，展示最近活动、活跃 session 和轻量统计。
+
+## 演示视频
+
+[观看产品演示（MP4）](docs/screenshots/claude-glance-demo.mp4)
+
+快速看一遍菜单栏概览、统计面板和挂件设置。
 
 ## 亮点
 
-- 动态挂件与浮动面板
-- 极简单面板设置
-- 菜单栏快速查看
-- 活跃 session 查看
-- 本地 transcript 扫描
+- 菜单栏快速查看今日活动、活跃 session 和最近完成
+- 轻量本地统计面板，快速了解 Claude Code 使用情况
+- 极简设置面板，可切换挂件样式和浮动行为
+- 扫描 `~/.claude/projects/` 下的本地 transcript
 - 默认纯本地，无需安装 Hook
 - CSV / JSON 导出
 
 ## 界面预览
 
+### 菜单栏概览
+
 菜单栏内快速查看今日统计、活跃任务和最近完成。
 
 ![菜单栏面板](docs/screenshots/menupannel.png)
+
+### 统计窗口
+
+如果 README 里只保留一张“大图”，最适合放这一张，因为它最容易让人第一眼理解产品在做什么。
+
+![统计窗口](docs/screenshots/stastic.png)
+
+### 挂件设置
+
+这两张图适合作为补充说明，展示挂件样式和设置方式，而不是占据首屏。
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/settingpannel-cat-floting.png" alt="浮动挂件设置" /></td>
+    <td width="50%"><img src="docs/screenshots/settingpannel-cat-play-guitart.png" alt="吉他挂件设置" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>浮动挂件样式</sub></td>
+    <td align="center"><sub>吉他挂件样式</sub></td>
+  </tr>
+</table>
 
 ## 安装
 

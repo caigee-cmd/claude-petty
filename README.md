@@ -4,35 +4,51 @@
 
 A native macOS menu bar app for viewing local Claude Code activity, active sessions, and lightweight usage stats.
 
-<p align="center">
-  <img src="docs/screenshots/mascots/cat_annimation21321.gif" width="96" alt="Runner mascot" />
-  <img src="docs/screenshots/mascots/catanimation_simple.gif" width="96" alt="Hide mascot" />
-  <img src="docs/screenshots/mascots/cat_guitar.gif" width="96" alt="Guitar mascot" />
-</p>
-
-<p align="center"><sub>Animated mascots. Local-first.</sub></p>
-
-![Claude Glance Demo](docs/screenshots/claude-glance-demo.gif)
-
-[Watch MP4 demo](docs/screenshots/claude-glance-demo.mp4)
-
 Claude Glance passively reads local transcript data under `~/.claude/projects/` and surfaces recent activity, active sessions, and lightweight stats.
+
+## Demo
+
+[Watch the product demo (MP4)](docs/screenshots/claude-glance-demo.mp4)
+
+A short walkthrough of the menu bar overview, daily stats, and mascot settings.
 
 ## Highlights
 
-- Animated mascots and floating panel
-- Minimal single-panel settings
-- Menu bar quick glance
-- Active session view
-- Local transcript scanning
+- Menu bar quick glance for today's activity, active sessions, and recent completions
+- Lightweight local stats dashboard for Claude Code usage
+- Minimal settings panel for mascot styles and floating behavior
+- Passive transcript scanning under `~/.claude/projects/`
 - Local-first by default, with no hook installation required
 - CSV / JSON export
 
-## UI Preview
+## Screenshots
+
+### Menu Bar Overview
 
 Quick glance at today's stats, active sessions, and recent completions from the menu bar.
 
 ![Menu bar popover](docs/screenshots/menupannel.png)
+
+### Stats Window
+
+The larger stats view is the best "first screenshot" for explaining the product at a glance.
+
+![Stats window](docs/screenshots/stastic.png)
+
+### Mascot Settings
+
+Two settings states that show how the floating mascot can be configured without leaving the app.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/settingpannel-cat-floting.png" alt="Floating mascot settings" /></td>
+    <td width="50%"><img src="docs/screenshots/settingpannel-cat-play-guitart.png" alt="Guitar mascot settings" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Floating mascot preset</sub></td>
+    <td align="center"><sub>Guitar mascot preset</sub></td>
+  </tr>
+</table>
 
 ## Installation
 
