@@ -8,11 +8,11 @@ Claude Glance passively reads local transcript data under `~/.claude/projects/` 
 
 ## Demo
 
-[![Watch the product demo](https://claude-glance-1390058464.cos.ap-singapore.myqcloud.com/menupannel.png)](https://claude-glance-1390058464.cos.ap-singapore.myqcloud.com/claude-glance-demo.mp4)
+![Claude Glance demo](https://claude-glance-1390058464.cos.ap-singapore.myqcloud.com/claude-demo.gif)
 
 A short walkthrough of the menu bar overview, daily stats, and mascot settings.
 
-GitHub README does not reliably support inline MP4 playback, so the preview image above links to the demo video directly.
+[Watch the HD MP4 demo](https://claude-glance-1390058464.cos.ap-singapore.myqcloud.com/claude-glance-demo.mp4)
 
 ## Highlights
 
