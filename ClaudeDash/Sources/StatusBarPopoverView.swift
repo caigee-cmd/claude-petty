@@ -629,8 +629,7 @@ struct ActiveSessionRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Image(systemName: session.source.iconName)
-                        .font(.system(size: 10, weight: .semibold))
+                    BrandIcon(source: session.source, size: 11)
                         .foregroundStyle(session.source.brandColor)
                     Text(session.project)
                         .font(PopoverPanelStyle.rowTitleFont)
@@ -738,8 +737,7 @@ struct RecentSessionRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: session.source.iconName)
-                .font(.system(size: 10, weight: .semibold))
+            BrandIcon(source: session.source, size: 11)
                 .foregroundStyle(session.source.brandColor)
 
             VStack(alignment: .leading, spacing: 4) {

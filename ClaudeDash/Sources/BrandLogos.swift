@@ -221,10 +221,32 @@ struct KimiLogoShape: Shape {
         path.addCurve(to: CGPoint(x: 9.390, y: 13.950), control1: CGPoint(x: 9.280, y: 14.300), control2: CGPoint(x: 9.270, y: 14.070))
         path.closeSubpath()
 
-        let scale = min(rect.width, rect.height) / 24.0
+        let sx = rect.width / 24.0
+        let sy = rect.height / 25.0
+        let scale = min(sx, sy)
         let tx = (rect.width - 24 * scale) / 2
         let ty = (rect.height - 25 * scale) / 2
         let transform = CGAffineTransform(a: scale, b: 0, c: 0, d: scale, tx: tx, ty: ty)
         return path.applying(transform)
+    }
+}
+
+// MARK: - 统一品牌图标视图
+
+struct BrandIcon: View {
+    let source: SessionSource
+    var size: CGFloat = 14
+
+    var body: some View {
+        switch source {
+        case .claude:
+            ClaudeLogoShape()
+                .aspectRatio(1.0, contentMode: .fit)
+                .frame(height: size)
+        case .kimi:
+            KimiLogoShape()
+                .aspectRatio(24.0 / 25.0, contentMode: .fit)
+                .frame(height: size)
+        }
     }
 }

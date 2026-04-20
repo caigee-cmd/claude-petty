@@ -42,7 +42,6 @@ private struct SourcePill: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 sourceIcon
-                    .frame(width: 14, height: 14)
 
                 Text(source.title)
                     .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
@@ -77,11 +76,9 @@ private struct SourcePill: View {
             Image(systemName: "square.grid.2x2")
                 .font(.system(size: 11, weight: .semibold))
         case .claude:
-            ClaudeLogoShape()
-                .aspectRatio(contentMode: .fit)
+            BrandIcon(source: .claude, size: 13)
         case .kimi:
-            KimiLogoShape()
-                .aspectRatio(contentMode: .fit)
+            BrandIcon(source: .kimi, size: 13)
         }
     }
 }

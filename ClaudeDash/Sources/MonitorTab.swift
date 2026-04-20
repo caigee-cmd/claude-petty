@@ -155,8 +155,7 @@ struct SessionRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
-                    Image(systemName: session.source.iconName)
-                        .font(.caption2)
+                    BrandIcon(source: session.source, size: 12)
                         .foregroundStyle(session.source.brandColor)
                     Text(session.project)
                         .font(.body)
