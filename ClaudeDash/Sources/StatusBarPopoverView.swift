@@ -738,9 +738,9 @@ struct RecentSessionRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 10))
-                .foregroundStyle(.green.opacity(0.7))
+            Image(systemName: session.source.iconName)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(session.source.brandColor)
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {

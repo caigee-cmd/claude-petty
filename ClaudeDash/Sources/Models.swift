@@ -179,8 +179,10 @@ struct SessionRecord: Codable, Identifiable, Sendable {
     let transcriptPath: String
     /// 完成时间戳
     let completedAt: Date
+    /// 数据来源
+    let source: SessionSource
 
-    init(project: String, cwd: String, durationMs: Int, cost: Double, summary: String, transcriptPath: String) {
+    init(project: String, cwd: String, durationMs: Int, cost: Double, summary: String, transcriptPath: String, source: SessionSource = .claude) {
         self.id = UUID()
         self.project = project
         self.cwd = cwd
@@ -189,6 +191,24 @@ struct SessionRecord: Codable, Identifiable, Sendable {
         self.summary = summary
         self.transcriptPath = transcriptPath
         self.completedAt = Date()
+        self.source = source
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, project, cwd, durationMs, cost, summary, transcriptPath, completedAt, source
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        project = try container.decode(String.self, forKey: .project)
+        cwd = try container.decode(String.self, forKey: .cwd)
+        durationMs = try container.decode(Int.self, forKey: .durationMs)
+        cost = try container.decode(Double.self, forKey: .cost)
+        summary = try container.decode(String.self, forKey: .summary)
+        transcriptPath = try container.decode(String.self, forKey: .transcriptPath)
+        completedAt = try container.decode(Date.self, forKey: .completedAt)
+        source = try container.decodeIfPresent(SessionSource.self, forKey: .source) ?? .claude
     }
 }
 

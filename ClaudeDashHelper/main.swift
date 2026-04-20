@@ -124,13 +124,15 @@ func writeSessionData() {
     // 确保目录存在
     try? FileManager.default.createDirectory(at: appSupportDir, withIntermediateDirectories: true)
 
+    let source: SessionSource = transcriptPath.contains(".kimi/sessions") ? .kimi : .claude
     let record = SessionRecord(
         project: project,
         cwd: cwd,
         durationMs: durationMs,
         cost: cost,
         summary: String(summary.prefix(500)),
-        transcriptPath: transcriptPath
+        transcriptPath: transcriptPath,
+        source: source
     )
 
     // 使用文件锁避免并发写入冲突
@@ -175,6 +177,12 @@ exit(0)
 
 // MARK: - 共享模型（Helper 需要的子集）
 
+/// Session 来源
+enum SessionSource: String, Codable {
+    case claude
+    case kimi
+}
+
 /// Session 记录（与主 App 共享结构）
 struct SessionRecord: Codable {
     let id: UUID
@@ -185,8 +193,9 @@ struct SessionRecord: Codable {
     let summary: String
     let transcriptPath: String
     let completedAt: Date
+    let source: SessionSource
 
-    init(project: String, cwd: String, durationMs: Int, cost: Double, summary: String, transcriptPath: String) {
+    init(project: String, cwd: String, durationMs: Int, cost: Double, summary: String, transcriptPath: String, source: SessionSource = .claude) {
         self.id = UUID()
         self.project = project
         self.cwd = cwd
@@ -195,6 +204,7 @@ struct SessionRecord: Codable {
         self.summary = summary
         self.transcriptPath = transcriptPath
         self.completedAt = Date()
+        self.source = source
     }
 }
 
