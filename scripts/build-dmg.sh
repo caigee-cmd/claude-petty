@@ -109,6 +109,7 @@ fi
   --overwrite \
   --no-code-sign \
   --dmg-title="${DMG_TITLE}" \
+  --dmg-name="ClaudePetty" \
   "${APP_PATH}" \
   "${DIST_DIR}"
 

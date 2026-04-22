@@ -60,7 +60,7 @@ jobs:
             2. Drag Claude Glance to Applications
             3. Launch from Applications (first launch requires right-click → Open)
           files: |
-            dist/ClaudeGlance.zip
-            dist/*.dmg
+            dist/ClaudePetty.zip
+            dist/ClaudePetty.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

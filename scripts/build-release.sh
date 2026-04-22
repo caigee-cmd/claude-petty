@@ -12,7 +12,7 @@ DIST_DIR="${REPO_ROOT}/dist"
 BUILD_DIR="${REPO_ROOT}/build"
 DERIVED_DATA_DIR="${BUILD_DIR}/DerivedData"
 APP_DIST_PATH="${DIST_DIR}/${APP_NAME}"
-ZIP_PATH="${DIST_DIR}/ClaudeGlance.zip"
+ZIP_PATH="${DIST_DIR}/ClaudePetty.zip"
 
 rm -rf "${DIST_DIR}" "${BUILD_DIR}"
 mkdir -p "${DIST_DIR}"
