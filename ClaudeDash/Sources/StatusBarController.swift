@@ -158,9 +158,6 @@ final class StatusBarController: NSObject {
             size: NSSize(width: 740, height: 680),
             content: statsView
         )
-        // 统计窗口使用标准不透明背景，避免黑底
-        window.isOpaque = true
-        window.backgroundColor = .windowBackgroundColor
         self.statsWindow = window
     }
 

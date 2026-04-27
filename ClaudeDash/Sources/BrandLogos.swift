@@ -231,6 +231,35 @@ struct KimiLogoShape: Shape {
     }
 }
 
+// MARK: - Codex Logo (OpenAI hexagon)
+
+struct CodexLogoShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: 12.00, y: 0.30))
+        path.addLine(to: CGPoint(x: 22.39, y: 6.15))
+        path.addLine(to: CGPoint(x: 22.39, y: 17.85))
+        path.addLine(to: CGPoint(x: 12.00, y: 23.70))
+        path.addLine(to: CGPoint(x: 1.61, y: 17.85))
+        path.addLine(to: CGPoint(x: 1.61, y: 6.15))
+        path.closeSubpath()
+
+        path.move(to: CGPoint(x: 12.00, y: 4.80))
+        path.addLine(to: CGPoint(x: 5.41, y: 8.60))
+        path.addLine(to: CGPoint(x: 5.41, y: 15.40))
+        path.addLine(to: CGPoint(x: 12.00, y: 19.20))
+        path.addLine(to: CGPoint(x: 18.59, y: 15.40))
+        path.addLine(to: CGPoint(x: 18.59, y: 8.60))
+        path.closeSubpath()
+
+        let scale = min(rect.width, rect.height) / 24.0
+        let tx = (rect.width - 24 * scale) / 2
+        let ty = (rect.height - 24 * scale) / 2
+        let transform = CGAffineTransform(a: scale, b: 0, c: 0, d: scale, tx: tx, ty: ty)
+        return path.applying(transform)
+    }
+}
+
 // MARK: - 统一品牌图标视图
 
 struct BrandIcon: View {
@@ -242,11 +271,15 @@ struct BrandIcon: View {
         case .claude:
             ClaudeLogoShape()
                 .aspectRatio(1.0, contentMode: .fit)
-                .frame(height: size)
+                .frame(width: size, height: size)
         case .kimi:
             KimiLogoShape()
                 .aspectRatio(24.0 / 25.0, contentMode: .fit)
-                .frame(height: size)
+                .frame(width: size, height: size)
+        case .codex:
+            CodexLogoShape()
+                .aspectRatio(1.0, contentMode: .fit)
+                .frame(width: size, height: size)
         }
     }
 }

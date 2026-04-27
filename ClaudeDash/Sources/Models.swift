@@ -60,12 +60,14 @@ enum FloatingMascotPreferences {
 enum SessionSource: String, Codable, Sendable {
     case claude
     case kimi
+    case codex
 
     /// 来源品牌色
     var brandColor: Color {
         switch self {
         case .claude: return .claudePurple
         case .kimi: return .kimiCyan
+        case .codex: return .codexGreen
         }
     }
 
@@ -74,6 +76,7 @@ enum SessionSource: String, Codable, Sendable {
         switch self {
         case .claude: return "bubble.left.fill"
         case .kimi: return "sparkles"
+        case .codex: return "cpu"
         }
     }
 
@@ -82,6 +85,7 @@ enum SessionSource: String, Codable, Sendable {
         switch self {
         case .claude: return "Claude"
         case .kimi: return "Kimi"
+        case .codex: return "Codex"
         }
     }
 }
@@ -91,6 +95,7 @@ enum StatsDataSource: String, CaseIterable, Identifiable, Sendable {
     case all
     case claude
     case kimi
+    case codex
 
     var id: String { rawValue }
 
@@ -99,6 +104,7 @@ enum StatsDataSource: String, CaseIterable, Identifiable, Sendable {
         case .all: return "全部"
         case .claude: return "Claude"
         case .kimi: return "Kimi"
+        case .codex: return "Codex"
         }
     }
 
@@ -107,6 +113,7 @@ enum StatsDataSource: String, CaseIterable, Identifiable, Sendable {
         case .all: return "square.grid.2x2"
         case .claude: return "bubble.left.fill"
         case .kimi: return "sparkles"
+        case .codex: return "cpu"
         }
     }
 
@@ -115,6 +122,7 @@ enum StatsDataSource: String, CaseIterable, Identifiable, Sendable {
         case .all: return .secondary
         case .claude: return .claudePurple
         case .kimi: return .kimiCyan
+        case .codex: return .codexGreen
         }
     }
 }

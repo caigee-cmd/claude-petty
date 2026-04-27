@@ -8,26 +8,32 @@ struct SourceFilterBar: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            ForEach(StatsDataSource.allCases) { source in
-                SourcePill(
-                    source: source,
-                    isSelected: selection == source
-                ) {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                        selection = source
-                    }
+            pills
+        }
+        .padding(4)
+        .background(barBackground)
+    }
+
+    private var pills: some View {
+        ForEach(StatsDataSource.allCases) { source in
+            SourcePill(
+                source: source,
+                isSelected: selection == source
+            ) {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                    selection = source
                 }
             }
         }
-        .padding(4)
-        .background(
-            Capsule()
-                .fill(.ultraThinMaterial.opacity(0.6))
-                .overlay(
-                    Capsule()
-                        .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
-                )
-        )
+    }
+
+    private var barBackground: some View {
+        Capsule()
+            .fill(.ultraThinMaterial.opacity(0.6))
+            .overlay(
+                Capsule()
+                    .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
+            )
     }
 }
 
@@ -42,16 +48,20 @@ private struct SourcePill: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 sourceIcon
+                    .frame(width: 13, height: 13)
 
                 Text(source.title)
                     .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
+                    .fixedSize()
             }
             .foregroundStyle(isSelected ? .white : .primary.opacity(0.55))
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(
-                isSelected ? AnyShapeStyle(source.accentGradient) : AnyShapeStyle(Color.clear)
-            )
+            .background {
+                if isSelected {
+                    Capsule().fill(source.accentGradient)
+                }
+            }
             .overlay(
                 Capsule()
                     .strokeBorder(
@@ -63,6 +73,7 @@ private struct SourcePill: View {
                 color: isSelected ? source.color.opacity(0.35) : .clear,
                 radius: 6, x: 0, y: 2
             )
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .scaleEffect(isSelected ? 1.0 : 0.96)
@@ -79,6 +90,8 @@ private struct SourcePill: View {
             BrandIcon(source: .claude, size: 13)
         case .kimi:
             BrandIcon(source: .kimi, size: 13)
+        case .codex:
+            BrandIcon(source: .codex, size: 13)
         }
     }
 }
@@ -106,6 +119,12 @@ extension StatsDataSource {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
+        case .codex:
+            return LinearGradient(
+                colors: [.codexGreen.opacity(0.85), .codexGreen.opacity(0.55)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         }
     }
 }
@@ -113,15 +132,14 @@ extension StatsDataSource {
 // MARK: - Preview
 
 #Preview {
-    @Previewable @State var source: StatsDataSource = .all
+    SourceFilterBarPreview()
+}
 
-    VStack(spacing: 20) {
+private struct SourceFilterBarPreview: View {
+    @State var source: StatsDataSource = .claude
+
+    var body: some View {
         SourceFilterBar(selection: $source)
             .padding()
-            .background(Color.black)
-
-        SourceFilterBar(selection: $source)
-            .padding()
-            .background(Color.white)
     }
 }

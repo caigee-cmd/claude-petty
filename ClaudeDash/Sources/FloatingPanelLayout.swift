@@ -10,7 +10,8 @@ enum FloatingPanelDisplayMode: Equatable {
 }
 
 enum FloatingPanelTransition {
-    static let targetFPS: Double = 60
+    static let targetFPS: Double = 30
+    static let idleFPS: Double = 10
     static let duration: TimeInterval = 0.26
     static let swiftUIAnimation: Animation = .interactiveSpring(
         response: 0.28,

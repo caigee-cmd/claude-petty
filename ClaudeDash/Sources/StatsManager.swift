@@ -469,10 +469,14 @@ private enum StatsComputation {
             .replacingOccurrences(of: "-20250", with: "")
     }
 
-    static func dayString(for date: Date) -> String {
+    private static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
+        return formatter
+    }()
+
+    static func dayString(for date: Date) -> String {
+        dayFormatter.string(from: date)
     }
 
     static func weekChangePercent(_ thisWeek: Int, _ lastWeek: Int) -> Double {
@@ -568,10 +572,11 @@ final class StatsManager: ObservableObject {
     @Published var todayMessageCount: Int = 0
     @Published var todayToolDistribution: [String: Int] = [:]
     @Published var dailyCostBudget: Double = 0
-    @Published var selectedSource: StatsDataSource = .all {
+    @Published var isRecalculating: Bool = false
+    @Published var selectedSource: StatsDataSource = .claude {
         didSet {
             guard oldValue != selectedSource else { return }
-            recalculate()
+            recalculateAsync()
         }
     }
 
@@ -643,13 +648,26 @@ final class StatsManager: ObservableObject {
 
     private func apply(_ snapshot: StatsScanSnapshot) {
         allSessions = snapshot.sessions
-        recalculate()
+        recalculateAsync()
     }
 
-    private func recalculate() {
-        let filtered = filterSessions(allSessions, by: selectedSource)
-        let snapshot = StatsComputation.scanSnapshot(from: filtered)
+    private func recalculateAsync() {
+        let sessions = allSessions
+        let source = selectedSource
+        isRecalculating = true
 
+        Task.detached(priority: .userInitiated) {
+            let filtered = Self.filterSessions(sessions, by: source)
+            let snapshot = StatsComputation.scanSnapshot(from: filtered)
+            await MainActor.run { [snapshot] in
+                self.applySnapshot(snapshot)
+                self.isRecalculating = false
+            }
+        }
+    }
+
+    private func applySnapshot(_ snapshot: StatsScanSnapshot) {
+        let filtered = snapshot.sessions
         cachedAllSessions = filtered
         cachedRangeSnapshots.removeAll()
 
@@ -666,7 +684,7 @@ final class StatsManager: ObservableObject {
         applyDerivedCache(snapshot.derived)
     }
 
-    private func filterSessions(_ sessions: [ScannedSession], by source: StatsDataSource) -> [ScannedSession] {
+    private nonisolated static func filterSessions(_ sessions: [ScannedSession], by source: StatsDataSource) -> [ScannedSession] {
         switch source {
         case .all:
             return sessions
@@ -674,6 +692,8 @@ final class StatsManager: ObservableObject {
             return sessions.filter { $0.source == .claude }
         case .kimi:
             return sessions.filter { $0.source == .kimi }
+        case .codex:
+            return sessions.filter { $0.source == .codex }
         }
     }
 

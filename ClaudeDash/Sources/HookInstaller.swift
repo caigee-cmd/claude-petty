@@ -324,7 +324,7 @@ final class HookIntegrationManager: ObservableObject {
 
     private func scheduleHealthChecks() {
         guard healthCheckTimer == nil else { return }
-        healthCheckTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
+        healthCheckTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.refreshStatus(promptForRepair: true)
             }

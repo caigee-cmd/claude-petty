@@ -88,6 +88,7 @@ struct StatusBarPopoverView: View {
         store: ClaudeDashDefaults.shared
     ) private var isMascotEnabled = false
     @State private var selectedOverviewRange: PopoverQuickRange = .sevenDays
+    @State private var selectedSource: SessionSource? = nil
 
     var onOpenStats: () -> Void
     var onTestNotification: () -> Void
@@ -107,7 +108,14 @@ struct StatusBarPopoverView: View {
                 .padding(.horizontal, PopoverPanelStyle.outerPadding)
                 .padding(.bottom, 8)
 
-            if !sessionMonitor.activeSessions.isEmpty {
+            sectionDivider
+
+            sourceFilterBar
+                .padding(.horizontal, PopoverPanelStyle.outerPadding)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
+
+            if !filteredActiveSessions.isEmpty {
                 sectionDivider
 
                 activeSessionsSection
@@ -116,7 +124,7 @@ struct StatusBarPopoverView: View {
                     .padding(.bottom, 10)
             }
 
-            if !statsManager.recentSessions.isEmpty {
+            if !filteredRecentSessions.isEmpty {
                 sectionDivider
 
                 recentCompletionsSection
@@ -125,7 +133,7 @@ struct StatusBarPopoverView: View {
                     .padding(.bottom, 10)
             }
 
-            if sessionMonitor.activeSessions.isEmpty && statsManager.recentSessions.isEmpty {
+            if filteredActiveSessions.isEmpty && filteredRecentSessions.isEmpty {
                 sectionDivider
 
                 emptyState
@@ -212,6 +220,67 @@ struct StatusBarPopoverView: View {
         }
     }
 
+    // MARK: - Source Filter
+
+    private var filteredActiveSessions: [ActiveSession] {
+        guard let src = selectedSource else { return sessionMonitor.activeSessions }
+        return sessionMonitor.activeSessions.filter { $0.source == src }
+    }
+
+    private var filteredRecentSessions: [SessionRecord] {
+        guard let src = selectedSource else { return statsManager.recentSessions }
+        return statsManager.recentSessions.filter { $0.source == src }
+    }
+
+    private var sourceFilterBar: some View {
+        HStack(spacing: 4) {
+            sourceFilterPill(label: "All", source: nil)
+            sourceFilterPill(label: "Claude", source: .claude)
+            sourceFilterPill(label: "Kimi", source: .kimi)
+            sourceFilterPill(label: "Codex", source: .codex)
+            Spacer(minLength: 0)
+        }
+        .popoverSurfaceBackground(cornerRadius: 12)
+        .padding(4)
+    }
+
+    private func sourceFilterPill(label: String, source: SessionSource?) -> some View {
+        let isSelected = selectedSource == source
+        return Button {
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
+                selectedSource = isSelected ? nil : source
+            }
+        } label: {
+            HStack(spacing: 5) {
+                if let source {
+                    BrandIcon(source: source, size: 10)
+                        .foregroundStyle(isSelected ? source.brandColor : Color.primary.opacity(0.5))
+                }
+                Text(label)
+                    .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
+                    .foregroundStyle(
+                        isSelected
+                            ? (source.map(\.brandColor) ?? Color.primary)
+                            : Color.primary.opacity(PopoverPanelStyle.secondaryTextOpacity)
+                    )
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background {
+                if isSelected {
+                    if let source {
+                        Capsule()
+                            .fill(source.brandColor.opacity(0.15))
+                            .overlay(Capsule().strokeBorder(source.brandColor.opacity(0.25), lineWidth: 0.5))
+                    } else {
+                        Capsule().fill(Color.white.opacity(PopoverPanelStyle.selectedPillOpacity))
+                    }
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: - Trend Overview
 
     private var selectedOverviewSnapshot: StatsManager.RangeSnapshot {
@@ -263,9 +332,9 @@ struct StatusBarPopoverView: View {
 
     private var activeSessionsSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            sectionLabel("Active", count: sessionMonitor.activeSessions.count, accent: .yellow)
+            sectionLabel("Active", count: filteredActiveSessions.count, accent: .yellow)
 
-            ForEach(sessionMonitor.activeSessions.prefix(3)) { session in
+            ForEach(filteredActiveSessions.prefix(3)) { session in
                 ActiveSessionRow(session: session)
             }
         }
@@ -277,7 +346,7 @@ struct StatusBarPopoverView: View {
         VStack(alignment: .leading, spacing: 6) {
             sectionLabel("Recent", accent: .green)
 
-            ForEach(statsManager.recentSessions.suffix(3)) { session in
+            ForEach(filteredRecentSessions.suffix(3)) { session in
                 RecentSessionRow(session: session)
             }
         }

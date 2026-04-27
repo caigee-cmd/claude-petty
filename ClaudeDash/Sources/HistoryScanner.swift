@@ -4,6 +4,7 @@
 
 import Foundation
 import CryptoKit
+import SQLite3
 
 // MARK: - 扫描结果模型
 
@@ -114,7 +115,7 @@ enum HistoryScanner {
         let entries: [String: CachedScanEntry]
     }
 
-    private static let cacheVersion = 2
+    private static let cacheVersion = 3
 
     /// Claude Code 项目目录
     private static var claudeProjectsDir: URL {
@@ -126,6 +127,12 @@ enum HistoryScanner {
     private static var kimiSessionsDir: URL {
         FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".kimi/sessions")
+    }
+
+    /// Codex CLI state 数据库
+    private static var codexStateDBPath: String {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".codex/state_5.sqlite").path
     }
 
     /// 历史扫描缓存文件
@@ -147,9 +154,10 @@ enum HistoryScanner {
 
         let claudeSessions = scanClaude(baseDir: claudeBaseDir, cacheStore: cacheStore, updatedEntries: &updatedEntries)
         let kimiSessions = scanKimi(baseDir: kimiBaseDir, cacheStore: cacheStore, updatedEntries: &updatedEntries)
+        let codexSessions = scanCodex(cacheStore: cacheStore, updatedEntries: &updatedEntries)
 
         persistCache(CachedScanStore(version: cacheVersion, entries: updatedEntries), to: cacheURL)
-        return (claudeSessions + kimiSessions).sorted { $0.startTime < $1.startTime }
+        return (claudeSessions + kimiSessions + codexSessions).sorted { $0.startTime < $1.startTime }
     }
 
     // MARK: - Claude Code 扫描
@@ -491,6 +499,184 @@ enum HistoryScanner {
             filePath: fileURL.path,
             toolDistribution: toolDistribution,
             source: .kimi
+        )
+    }
+
+    // MARK: - Codex CLI 扫描（SQLite 索引 + JSONL 工具分布）
+
+    private static func scanCodex(
+        cacheStore: CachedScanStore,
+        updatedEntries: inout [String: CachedScanEntry]
+    ) -> [ScannedSession] {
+        let dbPath = codexStateDBPath
+        guard FileManager.default.fileExists(atPath: dbPath) else { return [] }
+
+        let threads = loadCodexThreads(dbPath: dbPath)
+        guard !threads.isEmpty else { return [] }
+
+        var sessions: [ScannedSession] = []
+
+        for thread in threads {
+            let filePath = thread.rolloutPath
+            guard !filePath.isEmpty,
+                  FileManager.default.fileExists(atPath: filePath) else { continue }
+
+            let resourceKeys: Set<URLResourceKey> = [.contentModificationDateKey, .fileSizeKey]
+            let fileURL = URL(fileURLWithPath: filePath)
+            let modifiedAt: TimeInterval
+            let fileSize: Int64
+            if let values = try? fileURL.resourceValues(forKeys: resourceKeys) {
+                modifiedAt = values.contentModificationDate?.timeIntervalSince1970 ?? 0
+                fileSize = Int64(values.fileSize ?? 0)
+            } else {
+                modifiedAt = thread.updatedAt
+                fileSize = 0
+            }
+
+            if let cached = cacheStore.entries[filePath],
+               cached.matches(fileSize: fileSize, modifiedAt: modifiedAt) {
+                sessions.append(cached.session)
+                updatedEntries[filePath] = cached
+                continue
+            }
+
+            let toolInfo = parseCodexJSONLTools(at: fileURL)
+
+            let projectName = URL(fileURLWithPath: thread.cwd).lastPathComponent
+            let startTime = Date(timeIntervalSince1970: thread.createdAt)
+            let endTime = Date(timeIntervalSince1970: thread.updatedAt)
+            guard endTime.timeIntervalSince(startTime) > 0 else { continue }
+
+            let session = ScannedSession(
+                sessionId: thread.id,
+                projectDir: thread.cwd,
+                projectName: projectName,
+                startTime: startTime,
+                endTime: endTime,
+                inputTokens: thread.tokensUsed,
+                outputTokens: 0,
+                cacheReadTokens: 0,
+                cacheCreationTokens: 0,
+                messageCount: toolInfo.messageCount,
+                toolUseCount: toolInfo.toolUseCount,
+                model: thread.model,
+                filePath: filePath,
+                toolDistribution: toolInfo.toolDistribution,
+                source: .codex
+            )
+            sessions.append(session)
+            updatedEntries[filePath] = CachedScanEntry(
+                filePath: filePath,
+                fileSize: fileSize,
+                modifiedAt: modifiedAt,
+                session: session
+            )
+        }
+
+        return sessions
+    }
+
+    private struct CodexThread {
+        let id: String
+        let cwd: String
+        let title: String
+        let model: String
+        let tokensUsed: Int
+        let createdAt: TimeInterval
+        let updatedAt: TimeInterval
+        let rolloutPath: String
+    }
+
+    private static func loadCodexThreads(dbPath: String) -> [CodexThread] {
+        var db: OpaquePointer?
+        guard sqlite3_open_v2(dbPath, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, nil) == SQLITE_OK,
+              let db else { return [] }
+        defer { sqlite3_close(db) }
+
+        let sql = """
+            SELECT id, cwd, title, model, tokens_used, created_at, updated_at, rollout_path
+            FROM threads
+            WHERE rollout_path IS NOT NULL AND rollout_path != ''
+            ORDER BY updated_at DESC
+            """
+
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK,
+              let stmt else { return [] }
+        defer { sqlite3_finalize(stmt) }
+
+        var threads: [CodexThread] = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            let id = String(cString: sqlite3_column_text(stmt, 0))
+            let cwd = String(cString: sqlite3_column_text(stmt, 1))
+            let title = sqlite3_column_text(stmt, 2).map { String(cString: $0) } ?? ""
+            let model = sqlite3_column_text(stmt, 3).map { String(cString: $0) } ?? ""
+            let tokensUsed = Int(sqlite3_column_int64(stmt, 4))
+            let createdAt = Double(sqlite3_column_int64(stmt, 5))
+            let updatedAt = Double(sqlite3_column_int64(stmt, 6))
+            let rolloutPath = sqlite3_column_text(stmt, 7).map { String(cString: $0) } ?? ""
+
+            threads.append(CodexThread(
+                id: id, cwd: cwd, title: title, model: model,
+                tokensUsed: tokensUsed, createdAt: createdAt, updatedAt: updatedAt,
+                rolloutPath: rolloutPath
+            ))
+        }
+        return threads
+    }
+
+    private struct CodexToolInfo {
+        let toolUseCount: Int
+        let messageCount: Int
+        let toolDistribution: [String: Int]
+    }
+
+    private static func parseCodexJSONLTools(at fileURL: URL) -> CodexToolInfo {
+        guard let data = try? Data(contentsOf: fileURL),
+              let content = String(data: data, encoding: .utf8) else {
+            return CodexToolInfo(toolUseCount: 0, messageCount: 0, toolDistribution: [:])
+        }
+
+        var toolUseCount = 0
+        var messageCount = 0
+        var toolDistribution: [String: Int] = [:]
+
+        for line in content.components(separatedBy: .newlines) {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty,
+                  let lineData = trimmed.data(using: .utf8),
+                  let json = try? JSONSerialization.jsonObject(with: lineData) as? [String: Any] else {
+                continue
+            }
+
+            let type = json["type"] as? String ?? ""
+            let payload = json["payload"] as? [String: Any] ?? [:]
+
+            switch type {
+            case "response_item":
+                let itemType = payload["type"] as? String ?? ""
+                if itemType == "function_call" || itemType == "custom_tool_call" {
+                    toolUseCount += 1
+                    if let toolName = payload["name"] as? String {
+                        toolDistribution[toolName, default: 0] += 1
+                    }
+                }
+
+            case "event_msg":
+                let eventType = payload["type"] as? String ?? ""
+                if eventType == "agent_message" || eventType == "user_message" {
+                    messageCount += 1
+                }
+
+            default:
+                break
+            }
+        }
+
+        return CodexToolInfo(
+            toolUseCount: toolUseCount,
+            messageCount: messageCount,
+            toolDistribution: toolDistribution
         )
     }
 

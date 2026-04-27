@@ -80,8 +80,8 @@ final class SessionMonitor: ObservableObject {
 
     private let maxSessions = 10
     private let scanQueue = DispatchQueue(label: "ClaudeDash.SessionMonitor.scan", qos: .utility)
-    private let reconcileInterval: TimeInterval = 8
-    private let rescanDebounce: TimeInterval = 0.25
+    private let reconcileInterval: TimeInterval = 30
+    private let rescanDebounce: TimeInterval = 1.0
     private let activeThreshold: TimeInterval = 120
     private let completionThreshold: TimeInterval = 180
     private let completedRemovalDelay: TimeInterval = 30
@@ -90,6 +90,8 @@ final class SessionMonitor: ObservableObject {
         .appendingPathComponent(".claude/projects", isDirectory: true)
     private let kimiBaseURL = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent(".kimi/sessions", isDirectory: true)
+    private let codexBaseURL = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent(".codex/sessions", isDirectory: true)
 
     private var reconcileTimer: Timer?
     private var trackedFiles: [String: TrackedFile] = [:]
@@ -183,6 +185,7 @@ final class SessionMonitor: ObservableObject {
         let trackedSnapshot = trackedFiles.mapValues(\.isActive)
         let claudeBaseDir = projectsBaseURL.path
         let kimiBaseDir = kimiBaseURL.path
+        let codexBaseDir = codexBaseURL.path
         let activeThreshold = activeThreshold
         let completionThreshold = completionThreshold
 
@@ -209,6 +212,16 @@ final class SessionMonitor: ObservableObject {
             )
             allActiveFiles.append(contentsOf: kimiResult.activeFiles)
             allCompletedPaths.formUnion(kimiResult.completedPaths)
+
+            // Scan Codex CLI directory
+            let codexResult = Self.scanCodexDirectory(
+                baseDir: codexBaseDir,
+                trackedSnapshot: trackedSnapshot,
+                activeThreshold: activeThreshold,
+                completionThreshold: completionThreshold
+            )
+            allActiveFiles.append(contentsOf: codexResult.activeFiles)
+            allCompletedPaths.formUnion(codexResult.completedPaths)
 
             let mergedResult = SessionDirectoryScanResult(
                 activeFiles: allActiveFiles.sorted { $0.lastModified > $1.lastModified },
@@ -338,6 +351,85 @@ final class SessionMonitor: ObservableObject {
             return title
         }
         return nil
+    }
+
+    private nonisolated static func scanCodexDirectory(
+        baseDir: String,
+        trackedSnapshot: [String: Bool],
+        activeThreshold: TimeInterval,
+        completionThreshold: TimeInterval,
+        now: Date = Date()
+    ) -> SessionDirectoryScanResult {
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: baseDir) else {
+            return SessionDirectoryScanResult(activeFiles: [], completedPaths: [])
+        }
+
+        var activeFiles: [SessionDirectoryScanFile] = []
+        var completedPaths = Set<String>()
+
+        let calendar = Calendar.current
+        let today = now
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+
+        let dateDirs = [today, yesterday].compactMap { date -> String? in
+            let y = calendar.component(.year, from: date)
+            let m = calendar.component(.month, from: date)
+            let d = calendar.component(.day, from: date)
+            let path = (baseDir as NSString)
+                .appendingPathComponent(String(format: "%04d", y))
+                .appending("/\(String(format: "%02d", m))")
+                .appending("/\(String(format: "%02d", d))")
+            return fileManager.fileExists(atPath: path) ? path : nil
+        }
+
+        for dayDir in dateDirs {
+            guard let files = try? fileManager.contentsOfDirectory(atPath: dayDir) else { continue }
+
+            for file in files where file.hasSuffix(".jsonl") {
+                let filePath = (dayDir as NSString).appendingPathComponent(file)
+                guard let attrs = try? fileManager.attributesOfItem(atPath: filePath),
+                      let modDate = attrs[.modificationDate] as? Date else {
+                    continue
+                }
+
+                let age = now.timeIntervalSince(modDate)
+                if age < activeThreshold {
+                    let projectName = codexProjectName(forFile: filePath) ?? file
+                    activeFiles.append(SessionDirectoryScanFile(
+                        path: filePath,
+                        projectName: projectName,
+                        lastModified: modDate
+                    ))
+                } else if trackedSnapshot[filePath] == true,
+                          age > completionThreshold {
+                    completedPaths.insert(filePath)
+                }
+            }
+        }
+
+        return SessionDirectoryScanResult(
+            activeFiles: activeFiles.sorted { $0.lastModified > $1.lastModified },
+            completedPaths: completedPaths.sorted()
+        )
+    }
+
+    private nonisolated static func codexProjectName(forFile path: String) -> String? {
+        guard let fileHandle = FileHandle(forReadingAtPath: path) else { return nil }
+        defer { fileHandle.closeFile() }
+
+        // The first line can be 20KB+ due to base_instructions — full JSON parsing fails
+        // on a truncated chunk. cwd appears within the first ~200 bytes, so string search suffices.
+        let chunk = fileHandle.readData(ofLength: 512)
+        guard !chunk.isEmpty,
+              let text = String(data: chunk, encoding: .utf8),
+              let cwdRange = text.range(of: "\"cwd\":\"") else { return nil }
+
+        let valueStart = text[cwdRange.upperBound...]
+        guard let endQuote = valueStart.firstIndex(of: "\"") else { return nil }
+        let cwd = String(valueStart[valueStart.startIndex..<endQuote])
+        guard !cwd.isEmpty else { return nil }
+        return URL(fileURLWithPath: cwd).lastPathComponent
     }
 
     private func applyScanResult(_ result: SessionDirectoryScanResult) {
@@ -561,7 +653,14 @@ final class SessionMonitor: ObservableObject {
         parsers[path] = parser
         startWatchingTranscriptFile(at: path)
 
-        let source: SessionSource = Self.isKimiPath(path) ? .kimi : .claude
+        let source: SessionSource
+        if Self.isKimiPath(path) {
+            source = .kimi
+        } else if Self.isCodexPath(path) {
+            source = .codex
+        } else {
+            source = .claude
+        }
         let session = ActiveSession(project: tracked.projectName, transcriptPath: path, source: source)
         var subscriptions = Set<AnyCancellable>()
 
@@ -652,6 +751,10 @@ final class SessionMonitor: ObservableObject {
 
     private static func isKimiPath(_ path: String) -> Bool {
         path.contains(".kimi/sessions")
+    }
+
+    private static func isCodexPath(_ path: String) -> Bool {
+        path.contains(".codex/sessions")
     }
 
     private func cancelRootDirectoryWatcher() {

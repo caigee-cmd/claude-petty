@@ -220,7 +220,7 @@ struct FloatingPanelView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            TimelineView(.animation(minimumInterval: 1.0 / FloatingPanelTransition.targetFPS)) { context in
+            TimelineView(.animation(minimumInterval: 1.0 / (hasLiveActivity ? FloatingPanelTransition.targetFPS : FloatingPanelTransition.idleFPS))) { context in
                 let time = context.date.timeIntervalSinceReferenceDate
                 let field = FloatingPanelMotionField(time: time, hasLiveActivity: hasLiveActivity)
                 let hostSize = proxy.size

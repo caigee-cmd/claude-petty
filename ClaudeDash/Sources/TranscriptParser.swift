@@ -155,6 +155,7 @@ final class TranscriptParser: ObservableObject, @unchecked Sendable {
     private enum TranscriptFormat {
         case claude
         case kimi
+        case codex
     }
 
     init(filePath: String) {
@@ -197,17 +198,25 @@ final class TranscriptParser: ObservableObject, @unchecked Sendable {
         guard let data = line.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
 
-        // Auto-detect Kimi CLI format on metadata line
         if format == .claude {
             if json["protocol_version"] != nil {
                 format = .kimi
-                return // skip metadata line
+                return
+            }
+            let lineType = json["type"] as? String ?? ""
+            if lineType == "session_meta",
+               let payload = json["payload"] as? [String: Any],
+               payload["cli_version"] != nil {
+                format = .codex
+                return
             }
         }
 
         switch format {
         case .kimi:
             parseKimiLine(json)
+        case .codex:
+            parseCodexLine(json)
         case .claude:
             let lineType = json["type"] as? String ?? ""
             switch lineType {
@@ -283,6 +292,67 @@ final class TranscriptParser: ObservableObject, @unchecked Sendable {
                 if let output = tokenUsage["output"] as? Int { total += output }
                 if let cacheRead = tokenUsage["input_cache_read"] as? Int { total += cacheRead }
                 tokenUsageValue = min(1.0, Double(total) / maxContextTokens)
+            }
+
+        default:
+            break
+        }
+    }
+
+    private func parseCodexLine(_ json: [String: Any]) {
+        let type = json["type"] as? String ?? ""
+        let payload = json["payload"] as? [String: Any] ?? [:]
+
+        switch type {
+        case "event_msg":
+            let eventType = payload["type"] as? String ?? ""
+            switch eventType {
+            case "task_started":
+                statusValue = .thinking
+
+            case "agent_message":
+                statusValue = .thinking
+                if let text = payload["message"] as? String, !text.isEmpty {
+                    appendMessage(TranscriptMessage(role: "assistant", content: String(text.prefix(200))))
+                }
+
+            case "user_message":
+                statusValue = .thinking
+                appendMessage(TranscriptMessage(role: "user", content: "user input"))
+
+            case "task_complete":
+                statusValue = .completed
+                toolValue = .unknown
+
+            case "token_count":
+                if let rateLimits = payload["rate_limits"] as? [String: Any],
+                   let primary = rateLimits["primary"] as? [String: Any],
+                   let usedPercent = primary["used_percent"] as? Double {
+                    tokenUsageValue = min(1.0, usedPercent / 100.0)
+                }
+
+            default:
+                break
+            }
+
+        case "response_item":
+            let itemType = payload["type"] as? String ?? ""
+            switch itemType {
+            case "function_call", "custom_tool_call":
+                statusValue = .toolRunning
+                if let toolName = payload["name"] as? String {
+                    toolValue = mapToolName(toolName)
+                    appendMessage(TranscriptMessage(role: "assistant", content: "[\(toolName)]", toolName: toolName))
+                }
+
+            case "reasoning":
+                statusValue = .thinking
+
+            case "function_call_output", "custom_tool_call_output":
+                statusValue = .thinking
+
+            default:
+                break
             }
 
         default:
@@ -408,6 +478,8 @@ final class TranscriptParser: ObservableObject, @unchecked Sendable {
         if lowered.contains("grep") { return .grep }
         if lowered.contains("glob") { return .glob }
         if lowered.contains("bash") || lowered.contains("terminal") { return .bash }
+        if lowered == "exec_command" || lowered == "write_stdin" { return .bash }
+        if lowered == "apply_patch" { return .edit }
         return .unknown
     }
 }

@@ -13,6 +13,8 @@ extension Color {
     static let claudeCyan = Color(red: 34 / 255, green: 211 / 255, blue: 238 / 255)
     /// Kimi 蓝 #0EA5E9
     static let kimiCyan = Color(red: 14 / 255, green: 165 / 255, blue: 233 / 255)
+    /// Codex 绿 #10A37F
+    static let codexGreen = Color(red: 16 / 255, green: 163 / 255, blue: 127 / 255)
     /// 警告橙 #F97316
     static let claudeWarningOrange = Color(red: 249 / 255, green: 115 / 255, blue: 22 / 255)
     /// 警告红 #EF4444
@@ -104,23 +106,20 @@ extension View {
         modifier(LiquidGlassModifier(cornerRadius: cornerRadius, hasBorder: false))
     }
 
-    /// 更轻的统计页卡片，减少实时模糊和阴影开销
+    /// 统计页主卡片 — 半透明叠层（依赖窗口级 NSVisualEffectView 提供模糊）
     func statsCard(cornerRadius: CGFloat = 16) -> some View {
         background {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Color.white.opacity(0.055))
-                .overlay {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
-                }
+                .fill(Color.white.opacity(0.08))
+                .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
         }
     }
 
-    /// 更轻的统计页辅助底板
+    /// 统计页辅助底板 — 极淡叠层
     func statsBackground(cornerRadius: CGFloat = 12) -> some View {
         background {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.white.opacity(0.05))
         }
     }
 }
@@ -257,5 +256,26 @@ struct GradientTextModifier: ViewModifier {
 extension View {
     func gradientForeground(_ gradient: LinearGradient = ClaudeGradients.primary) -> some View {
         overlay { gradient.mask(self) }
+    }
+}
+
+// MARK: - macOS 原生毛玻璃窗口背景
+
+struct VisualEffectBackground: NSViewRepresentable {
+    var material: NSVisualEffectView.Material
+    var blendingMode: NSVisualEffectView.BlendingMode
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = material
+        view.blendingMode = blendingMode
+        view.state = .active
+        view.isEmphasized = true
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = material
+        nsView.blendingMode = blendingMode
     }
 }

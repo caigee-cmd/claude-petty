@@ -77,17 +77,17 @@ struct StatsDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             topBar
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
-                .padding(.bottom, 8)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 6)
 
             tabBar
-                .padding(.horizontal, 24)
-                .padding(.bottom, 10)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 8)
 
             quickRangeBar
-                .padding(.horizontal, 24)
-                .padding(.bottom, 12)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 10)
 
             if statsManager.scanComplete {
                 ScrollView(.vertical, showsIndicators: false) {
@@ -99,49 +99,37 @@ struct StatsDetailView: View {
                     case .insights: insightsContent
                     }
                 }
+                .compositingGroup()
             } else {
                 statsLoadingState
             }
         }
         .frame(minWidth: 740, minHeight: 660)
-        .background(statsWindowBackground)
+        .background(statsWindowBackground.ignoresSafeArea())
     }
 
     // MARK: - 顶部栏
 
     private var topBar: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 8) {
-                Image(systemName: "chart.bar.xaxis.ascending")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(ClaudeGradients.primary)
-
-                Text("Statistics")
-                    .font(.system(size: 20, weight: .bold))
-
-                if statsManager.usageStreak > 1 {
-                    HStack(spacing: 4) {
-                        Image(systemName: "flame.fill")
-                            .font(.system(size: 12))
-                        Text("\(statsManager.usageStreak)")
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
-                    }
-                    .foregroundStyle(.orange)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .statsBackground(cornerRadius: 8)
+        HStack(spacing: 8) {
+            if statsManager.usageStreak > 1 {
+                HStack(spacing: 4) {
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: 12))
+                    Text("\(statsManager.usageStreak)d streak")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
                 }
+                .foregroundStyle(.orange)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .statsBackground(cornerRadius: 8)
             }
 
             Spacer()
 
-            HStack(spacing: 8) {
-                SourceFilterBar(selection: $statsManager.selectedSource)
-
-                miniStat(icon: "sum", label: "Sessions", value: "\(statsManager.totalCompletionsAllTime)")
-                miniStat(icon: ClaudeDashSymbols.totalCost, label: "Cost", value: statsManager.totalCostAllTime.usdFormatted)
-                miniStat(icon: "textformat.123", label: "Tokens", value: statsManager.totalTokensAllTime.tokenFormatted)
-            }
+            miniStat(icon: "sum", label: "Sessions", value: "\(statsManager.totalCompletionsAllTime)")
+            miniStat(icon: ClaudeDashSymbols.totalCost, label: "Cost", value: statsManager.totalCostAllTime.usdFormatted)
+            miniStat(icon: "textformat.123", label: "Tokens", value: statsManager.totalTokensAllTime.tokenFormatted)
         }
     }
 
@@ -152,10 +140,10 @@ struct StatsDetailView: View {
                     selectedTab = tab
                 } label: {
                     Text(tab.rawValue)
-                        .font(.system(size: 13, weight: selectedTab == tab ? .semibold : .medium))
+                        .font(.system(size: 12, weight: selectedTab == tab ? .semibold : .medium))
                         .foregroundStyle(selectedTab == tab ? Color.primary : Color.primary.opacity(StatsPanelStyle.inactiveTextOpacity))
-                        .padding(.horizontal, 15)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
                         .background {
                             if selectedTab == tab {
                                 Capsule()
@@ -177,10 +165,10 @@ struct StatsDetailView: View {
                     selectedRange = range
                 } label: {
                     Text(range.title)
-                        .font(.system(size: 12, weight: selectedRange == range ? .semibold : .medium))
+                        .font(.system(size: 11, weight: selectedRange == range ? .semibold : .medium))
                         .foregroundStyle(selectedRange == range ? Color.primary : Color.primary.opacity(StatsPanelStyle.inactiveTextOpacity))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
                         .background {
                             if selectedRange == range {
                                 Capsule()
@@ -193,9 +181,7 @@ struct StatsDetailView: View {
 
             Spacer()
 
-            Text(selectedRange.longTitle)
-                .font(StatsPanelStyle.miniLabel)
-                .foregroundStyle(.primary.opacity(StatsPanelStyle.tertiaryTextOpacity))
+            SourceFilterBar(selection: $statsManager.selectedSource)
         }
         .padding(4)
         .statsBackground(cornerRadius: 14)
@@ -227,15 +213,18 @@ struct StatsDetailView: View {
     }
 
     private var statsWindowBackground: some View {
-        Color(nsColor: .windowBackgroundColor)
+        VisualEffectBackground(
+            material: .underWindowBackground,
+            blendingMode: .behindWindow
+        )
     }
 
     // MARK: - Overview Tab
 
     private var overviewContent: some View {
-        LazyVStack(spacing: 16) {
+        LazyVStack(spacing: 12) {
             // 趋势主图 + 今日详情
-            HStack(alignment: .top, spacing: 16) {
+            HStack(alignment: .top, spacing: 12) {
                 StatsTrendHeroCard(
                     data: selectedSnapshot.dailySummaries,
                     headlineValue: selectedSnapshot.totalTokens.tokenFormatted,
@@ -256,10 +245,10 @@ struct StatsDetailView: View {
                 }
                 .frame(width: 220)
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // 范围对比
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: selectedRange.comparisonTitle, trailing: selectedRange.comparisonTrailing)
 
                 RangeComparisonView(
@@ -270,12 +259,12 @@ struct StatsDetailView: View {
                     previousLabel: selectedRange.previousLabel
                 )
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // 热力图
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: "Contribution Activity", trailing: "last 13 weeks")
 
                 ContributionHeatmapView(
@@ -287,12 +276,12 @@ struct StatsDetailView: View {
                     showMonthLabels: true
                 )
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // 14 天趋势
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: "Activity Trend", trailing: selectedRange.title)
 
                 UsageTrendChartView(
@@ -302,9 +291,9 @@ struct StatsDetailView: View {
                     showPeakAnnotation: true
                 )
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // 今日小时分布
             hourlyHeatmapSection(
@@ -312,7 +301,7 @@ struct StatsDetailView: View {
                 peakHour: selectedSnapshot.peakHour,
                 title: selectedRange == .today ? "Hourly Distribution" : "Hourly Distribution — \(selectedRange.title)"
             )
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 20)
 
             Spacer(minLength: 24)
         }
@@ -322,7 +311,7 @@ struct StatsDetailView: View {
     // MARK: - Tokens & Cost Tab
 
     private var tokensContent: some View {
-        LazyVStack(spacing: 16) {
+        LazyVStack(spacing: 12) {
             // Token 概览卡片
             HStack(spacing: 10) {
                 tokenOverviewCard(title: "Input", value: selectedSnapshot.inputTokens.tokenFormatted, color: .claudeCyan, icon: "arrow.down.circle.fill")
@@ -330,10 +319,10 @@ struct StatsDetailView: View {
                 tokenOverviewCard(title: "Total", value: selectedSnapshot.totalTokens.tokenFormatted, color: .indigo, icon: "sum")
                 tokenOverviewCard(title: "Cost", value: selectedSnapshot.totalCost.usdFormatted, color: .orange, icon: "dollarsign.circle.fill")
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // Cache 效率
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: "Cache Efficiency", trailing: "saved \(selectedSnapshot.cacheSavings.usdFormatted)")
 
                 CacheEfficiencyView(
@@ -345,12 +334,12 @@ struct StatsDetailView: View {
                     outputTokens: selectedSnapshot.outputTokens
                 )
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // 成本细分
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: "Cost Breakdown", trailing: selectedRange.title)
 
                 CostBreakdownView(
@@ -361,17 +350,17 @@ struct StatsDetailView: View {
                     height: 100
                 )
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // Token 趋势图
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: "Token Usage", trailing: selectedRange.title)
 
                 TokenTrendChartView(data: selectedSnapshot.dailySummaries, height: 180)
 
-                HStack(spacing: 16) {
+                HStack(spacing: 12) {
                     HStack(spacing: 4) {
                         Circle().fill(Color.claudeCyan.opacity(0.7)).frame(width: 6, height: 6)
                         Text("Input").font(.system(size: 9)).foregroundStyle(.secondary)
@@ -382,19 +371,19 @@ struct StatsDetailView: View {
                     }
                 }
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // 成本趋势图
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: "Cost Trend", trailing: selectedRange.title)
 
                 CostTrendChartView(data: selectedSnapshot.dailySummaries, height: 160)
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             Spacer(minLength: 24)
         }
@@ -404,9 +393,9 @@ struct StatsDetailView: View {
     // MARK: - Tools Tab (NEW)
 
     private var toolsContent: some View {
-        LazyVStack(spacing: 16) {
+        LazyVStack(spacing: 12) {
             // 工具分布
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: "Tool Distribution", trailing: "\(selectedSnapshot.totalToolUseCount) calls")
 
                 ToolDistributionView(
@@ -414,13 +403,13 @@ struct StatsDetailView: View {
                     totalCount: selectedSnapshot.totalToolUseCount
                 )
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // 模型使用分布
             if !selectedSnapshot.modelDistribution.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 6) {
                     GlassSectionHeader(title: "Model Usage")
 
                     VStack(spacing: 6) {
@@ -429,23 +418,23 @@ struct StatsDetailView: View {
                         }
                     }
                 }
-                .padding(16)
+                .padding(12)
                 .statsCard(cornerRadius: 20)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 20)
             }
 
             // 工具调用趋势
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: "Tool Usage", trailing: selectedRange.title)
 
                 ToolTrendChartView(data: selectedSnapshot.dailySummaries, height: 160)
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // 对话深度
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: "Conversation Depth")
 
                 HStack(spacing: 10) {
@@ -455,9 +444,9 @@ struct StatsDetailView: View {
                     depthCard(icon: "dollarsign.circle", label: "Avg Cost", value: selectedSnapshot.averageCostPerSession.usdFormatted, color: .orange)
                 }
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             Spacer(minLength: 24)
         }
@@ -467,7 +456,7 @@ struct StatsDetailView: View {
     // MARK: - Projects Tab
 
     private var projectsContent: some View {
-        LazyVStack(spacing: 16) {
+        LazyVStack(spacing: 12) {
             if selectedSnapshot.projectStats.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "folder.badge.questionmark")
@@ -486,9 +475,9 @@ struct StatsDetailView: View {
                         projectRow(index: index, stat: stat)
                     }
                 }
-                .padding(16)
+                .padding(12)
                 .statsCard(cornerRadius: 20)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 20)
             }
 
             Spacer(minLength: 24)
@@ -499,9 +488,9 @@ struct StatsDetailView: View {
     // MARK: - Insights Tab (NEW)
 
     private var insightsContent: some View {
-        LazyVStack(spacing: 16) {
+        LazyVStack(spacing: 12) {
             // 效率指标面板
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: "Efficiency Metrics")
 
                 EfficiencyMetricsView(
@@ -513,22 +502,22 @@ struct StatsDetailView: View {
                     streak: statsManager.usageStreak
                 )
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // 智能洞察
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: "Range Insights", trailing: selectedRange.title)
 
                 InsightsListView(insights: selectedSnapshot.insights)
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // 7×24 全周热力图
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: "Activity Punch Card", trailing: selectedRange.title)
 
                 WeeklyPunchCardView(
@@ -537,12 +526,12 @@ struct StatsDetailView: View {
                     cellSpacing: 2
                 )
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // Session 时长分布
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: "Session Duration Distribution", trailing: selectedRange.title)
 
                 DurationDistributionView(
@@ -550,22 +539,22 @@ struct StatsDetailView: View {
                     height: 140
                 )
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // 今日 Session 时间线
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: selectedRange.timelineTitle, trailing: "\(selectedSnapshot.sessions.count) sessions")
 
                 SessionTimelineView(sessions: selectedSnapshot.sessions)
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // 导出按钮
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 GlassSectionHeader(title: "Data Export")
 
                 ExportButtonsView(
@@ -573,9 +562,9 @@ struct StatsDetailView: View {
                     onExportJSON: { exportData(format: "json") }
                 )
             }
-            .padding(16)
+            .padding(12)
             .statsCard(cornerRadius: 20)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             Spacer(minLength: 24)
         }
@@ -591,13 +580,13 @@ struct StatsDetailView: View {
     ) -> some View {
         HStack(spacing: StatsPanelStyle.cardPadding) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(.system(size: 14))
                 .foregroundStyle(color)
-                .frame(width: 22)
+                .frame(width: 20)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(value)
-                    .font(.system(.title2, design: .rounded, weight: .bold))
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
@@ -647,11 +636,11 @@ struct StatsDetailView: View {
     private func tokenOverviewCard(title: String, value: String, color: Color, icon: String) -> some View {
         VStack(spacing: 7) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(.system(size: 14))
                 .foregroundStyle(color)
 
             Text(value)
-                .font(.system(.title2, design: .rounded, weight: .bold))
+                .font(.system(size: 18, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
@@ -678,7 +667,7 @@ struct StatsDetailView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 20)
     }
 
     // MARK: - 每小时热力图
@@ -688,7 +677,7 @@ struct StatsDetailView: View {
         peakHour: Int?,
         title: String
     ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
                 GlassSectionHeader(title: title)
                 Spacer()
@@ -733,7 +722,7 @@ struct StatsDetailView: View {
                 }
             }
         }
-        .padding(16)
+        .padding(12)
         .statsCard(cornerRadius: 20)
     }
 
@@ -798,7 +787,7 @@ struct StatsDetailView: View {
                 .foregroundStyle(color)
 
             Text(value)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(.system(size: 15, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
@@ -875,10 +864,12 @@ struct StatsDetailView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(
-            index == 0 ? AnyShapeStyle(.orange.opacity(0.05)) : AnyShapeStyle(.clear),
-            in: RoundedRectangle(cornerRadius: 10, style: .continuous)
-        )
+        .background {
+            if index == 0 {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(.orange.opacity(0.05))
+            }
+        }
         .statsBackground(cornerRadius: 10)
     }
 
@@ -932,11 +923,11 @@ private struct StatsTrendHeroCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(headlineValue)
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .font(.system(size: 30, weight: .bold, design: .rounded))
                         .monospacedDigit()
 
                     Text(headlineLabel)
@@ -1034,7 +1025,7 @@ private struct StatsTrendHeroCard: View {
     }
 
     private func trendSummaryChip(title: String, value: String, accent: Color) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             Circle()
                 .fill(accent)
                 .frame(width: 7, height: 7)
@@ -1130,12 +1121,12 @@ private struct RangeComparisonView: View {
             }
 
             Text(currentValue)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(.system(size: 16, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
-            HStack(alignment: .bottom, spacing: 8) {
+            HStack(alignment: .bottom, spacing: 6) {
                 comparisonChangeBadge(change: change)
 
                 Spacer(minLength: 0)
@@ -1210,44 +1201,6 @@ private struct RangeComparisonView: View {
             (change > 0 ? Color.green : (abs(change) > 0.5 ? Color.red : Color.secondary)).opacity(0.1),
             in: Capsule()
         )
-    }
-}
-
-// MARK: - DetailStatCard (保留兼容)
-
-struct DetailStatCard: View {
-    let title: String
-    let value: String
-    var trend: Int? = nil
-    var trendValue: Double? = nil
-    var trendDuration: Double? = nil
-    var trendLabel: String? = nil
-    var subtitle: String? = nil
-    let icon: String
-    let color: Color
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.system(size: 12))
-                    .foregroundStyle(color)
-                Spacer()
-            }
-
-            Text(value)
-                .font(.system(.title3, design: .rounded, weight: .bold))
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-
-            Text(subtitle ?? title)
-                .font(.system(size: 9))
-                .foregroundStyle(.tertiary)
-        }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .statsCard(cornerRadius: 14)
     }
 }
 

@@ -118,6 +118,8 @@ struct SessionTimelineView: View {
             return LinearGradient(colors: [.kimiCyan.opacity(0.8), .kimiCyan.opacity(0.4)], startPoint: .leading, endPoint: .trailing)
         case .claude:
             return LinearGradient(colors: [.claudePurple, .claudeCyan], startPoint: .leading, endPoint: .trailing)
+        case .codex:
+            return LinearGradient(colors: [.codexGreen.opacity(0.8), .codexGreen.opacity(0.4)], startPoint: .leading, endPoint: .trailing)
         }
     }
 
